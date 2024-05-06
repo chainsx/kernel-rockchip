@@ -209,6 +209,22 @@
 		vin-supply = <&vcc5v0_sys>;
 	};
 
+	vcc5v0_sata: vcc5v0-sata {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_sata";
+		regulator-always-on;
+		regulator-boot-on;
+		startup-delay-us = <1000000>;
+		//usb-pd-controller = <&usbc0>;
+		enable-active-high;
+		gpio = <&gpio4 RK_PC2 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&sata1_pwr_en>;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		vin-supply = <&vcc12v_dcin>;
+	};
+
 	gpio-leds {
 		compatible = "gpio-leds";
 		pinctrl-names = "default";
@@ -867,6 +883,11 @@
 	status = "okay";
 };
 
+&sata1{
+	ahci-supply = <&vcc5v0_sata>;
+	status = "okay";
+};
+
 &i2c6 {
 	status = "okay";
 	pinctrl-names = "default";
@@ -898,12 +919,13 @@
 		usb_con: connector {
 			compatible = "usb-c-connector";
 			label = "USB-C";
-			data-role = "dual";
+			data-role = "host";
+			dr_mode = "host";
 			power-role = "dual";
 			try-power-role = "sink";
 			op-sink-microwatt = <1000000>;
 			sink-pdos =
-			<PDO_FIXED(5000, 3000, PDO_FIXED_USB_COMM)
+			<PDO_FIXED(5000, 1000, PDO_FIXED_USB_COMM)
 			PDO_FIXED(9000, 3000, PDO_FIXED_USB_COMM)
 			PDO_FIXED(12000, 3000, PDO_FIXED_USB_COMM)>;
 			source-pdos =
@@ -1016,6 +1038,12 @@
 };
 
 &spdif_tx2 {
+	status = "okay";
+};
+
+&combphy1_ps {
+	// pinctrl-names = "default";
+	// pinctrl-0 = <&sata1_pm_reset>;
 	status = "okay";
 };
 
@@ -1378,6 +1406,15 @@
 	hdmirx {
 		hdmirx_det: hdmirx-det {
 			rockchip,pins = <1 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	sata {
+		sata1_pwr_en: sata-pwr-en{
+			rockchip,pins = <4 RK_PC2 RK_FUNC_GPIO &pcfg_output_high>;
+		};
+		sata1_pm_reset: sata1-pm-reset {
+			rockchip,pins = <2 RK_PC2 RK_FUNC_GPIO &pcfg_output_high>;
 		};
 	};
 };
