@@ -479,13 +479,13 @@ struct tcpm_port {
 	 * SNK_READY for non-pd link.
 	 */
 	bool slow_charger_loop;
-#ifdef CONFIG_DEBUG_FS
+//#ifdef CONFIG_DEBUG_FS
 	struct dentry *dentry;
 	struct mutex logbuffer_lock;	/* log buffer access lock */
 	int logbuffer_head;
 	int logbuffer_tail;
 	u8 *logbuffer[LOG_BUFFER_ENTRIES];
-#endif
+//#endif
 	bool faster_pd_negotiation;
 };
 
@@ -580,7 +580,7 @@ static bool tcpm_port_is_disconnected(struct tcpm_port *port)
  * Logging
  */
 
-#ifdef CONFIG_DEBUG_FS
+//#ifdef CONFIG_DEBUG_FS
 
 static bool tcpm_log_full(struct tcpm_port *port)
 {
@@ -770,7 +770,7 @@ static void tcpm_debugfs_exit(struct tcpm_port *port)
 	debugfs_remove(port->dentry);
 }
 
-#else
+/*#else
 
 __printf(2, 3)
 static void tcpm_log(const struct tcpm_port *port, const char *fmt, ...) { }
@@ -780,7 +780,7 @@ static void tcpm_log_source_caps(struct tcpm_port *port) { }
 static void tcpm_debugfs_init(const struct tcpm_port *port) { }
 static void tcpm_debugfs_exit(const struct tcpm_port *port) { }
 
-#endif
+#endif*/
 
 static void tcpm_set_cc(struct tcpm_port *port, enum typec_cc_status cc)
 {
