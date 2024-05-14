@@ -807,8 +807,8 @@
 		     &gmac1m1_rgmii_bus
 		     &gmac1m1_clkinout>;
 
-	tx_delay = <0x4f>;
-	rx_delay = <0x2d>;
+	tx_delay = <0x24>;
+	rx_delay = <0x17>;
 
 	phy-handle = <&rgmii_phy1>;
 	status = "okay";
