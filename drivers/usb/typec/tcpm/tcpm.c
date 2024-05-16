@@ -34,6 +34,14 @@
 #include <trace/hooks/typec.h>
 #include <uapi/linux/sched/types.h>
 
+
+#include <linux/printk.h>
+#include <linux/timekeeping.h>
+#include <linux/mutex.h>
+#include <linux/slab.h>
+#include <linux/seq_file.h>
+
+
 #define FOREACH_STATE(S)			\
 	S(INVALID_STATE),			\
 	S(TOGGLING),			\
@@ -479,13 +487,13 @@ struct tcpm_port {
 	 * SNK_READY for non-pd link.
 	 */
 	bool slow_charger_loop;
-//#ifdef CONFIG_DEBUG_FS
+#ifdef CONFIG_DEBUG_FS
 	struct dentry *dentry;
 	struct mutex logbuffer_lock;	/* log buffer access lock */
 	int logbuffer_head;
 	int logbuffer_tail;
 	u8 *logbuffer[LOG_BUFFER_ENTRIES];
-//#endif
+#endif
 	bool faster_pd_negotiation;
 };
 
@@ -580,7 +588,7 @@ static bool tcpm_port_is_disconnected(struct tcpm_port *port)
  * Logging
  */
 
-//#ifdef CONFIG_DEBUG_FS
+#ifdef CONFIG_DEBUG_FS
 
 static bool tcpm_log_full(struct tcpm_port *port)
 {
@@ -596,6 +604,16 @@ static void _tcpm_log(struct tcpm_port *port, const char *fmt, va_list args)
 	unsigned long rem_nsec;
 	bool bypass_log = false;
 
+	vsnprintf(tmpbuffer, sizeof(tmpbuffer), fmt, args);
+	trace_android_vh_typec_tcpm_log(tmpbuffer, &bypass_log);
+	if (bypass_log)
+		return;
+
+	rem_nsec = do_div(ts_nsec, 1000000000);
+	printk(KERN_INFO "[%5lu.%06lu] %s\n",
+	       (unsigned long)ts_nsec, rem_nsec / 1000,
+	       tmpbuffer);
+
 	mutex_lock(&port->logbuffer_lock);
 	if (!port->logbuffer[port->logbuffer_head]) {
 		port->logbuffer[port->logbuffer_head] =
@@ -605,11 +623,6 @@ static void _tcpm_log(struct tcpm_port *port, const char *fmt, va_list args)
 			return;
 		}
 	}
-
-	vsnprintf(tmpbuffer, sizeof(tmpbuffer), fmt, args);
-	trace_android_vh_typec_tcpm_log(tmpbuffer, &bypass_log);
-	if (bypass_log)
-		goto abort;
 
 	if (tcpm_log_full(port)) {
 		port->logbuffer_head = max(port->logbuffer_head - 1, 0);
@@ -629,7 +642,6 @@ static void _tcpm_log(struct tcpm_port *port, const char *fmt, va_list args)
 		goto abort;
 	}
 
-	rem_nsec = do_div(ts_nsec, 1000000000);
 	scnprintf(port->logbuffer[port->logbuffer_head],
 		  LOG_BUFFER_ENTRY_SIZE, "[%5lu.%06lu] %s",
 		  (unsigned long)ts_nsec, rem_nsec / 1000,
@@ -727,6 +739,7 @@ static void tcpm_log_source_caps(struct tcpm_port *port)
 	}
 }
 
+
 static int tcpm_debug_show(struct seq_file *s, void *v)
 {
 	struct tcpm_port *port = (struct tcpm_port *)s->private;
@@ -770,7 +783,7 @@ static void tcpm_debugfs_exit(struct tcpm_port *port)
 	debugfs_remove(port->dentry);
 }
 
-/*#else
+#else
 
 __printf(2, 3)
 static void tcpm_log(const struct tcpm_port *port, const char *fmt, ...) { }
@@ -780,7 +793,7 @@ static void tcpm_log_source_caps(struct tcpm_port *port) { }
 static void tcpm_debugfs_init(const struct tcpm_port *port) { }
 static void tcpm_debugfs_exit(const struct tcpm_port *port) { }
 
-#endif*/
+#endif
 
 static void tcpm_set_cc(struct tcpm_port *port, enum typec_cc_status cc)
 {
