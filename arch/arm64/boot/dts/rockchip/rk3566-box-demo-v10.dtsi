@@ -185,6 +185,7 @@
 
 	assigned-clocks = <&cru SCLK_GMAC1_RX_TX>, <&cru SCLK_GMAC1>;
 	assigned-clock-parents =  <&cru SCLK_GMAC1_RGMII_SPEED>, <&gmac1_clkin>;
+	assigned-clock-rates = <0 125000000>;
 
 	pinctrl-names = "default";
 	pinctrl-0 = <&gmac1m1_miim
@@ -194,8 +195,8 @@
 		     &gmac1m1_rgmii_bus
 		     &gmac1m1_clkinout>;
 
-	tx_delay = <0x4f>;
-	rx_delay = <0x2d>;
+	tx_delay = <0x24>;
+	rx_delay = <0x17>;
 
 	phy-handle = <&rgmii_phy1>;
 	status = "okay";
