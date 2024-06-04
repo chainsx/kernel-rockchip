@@ -474,8 +474,8 @@
 	/* Reset time is 20ms, 100ms for rtl8211f */
 	snps,reset-delays-us = <0 20000 100000>;
 
-	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>, <&cru SCLK_GMAC1>;
-	assigned-clock-parents = <&cru SCLK_GMAC0_RGMII_SPEED>;
+	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>, <&cru SCLK_GMAC0>;
+	assigned-clock-parents = <&cru SCLK_GMAC0_RGMII_SPEED>, <&cru CLK_MAC0_2TOP>;
 	assigned-clock-rates = <0>, <125000000>;
 
 	pinctrl-names = "default";
@@ -492,16 +492,6 @@
 	status = "okay";
 };
 
-&mdio0 {
-	status = "okay";
-
-	rgmii_phy0: phy@1 {
-		status = "okay";
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <0x0>;
-	};
-};
-
 &gmac1 {
 	phy-mode = "rgmii";
 	clock_in_out = "output";
@@ -512,7 +502,7 @@
 	snps,reset-delays-us = <0 20000 100000>;
 
 	assigned-clocks = <&cru SCLK_GMAC1_RX_TX>, <&cru SCLK_GMAC1>;
-	assigned-clock-parents = <&cru SCLK_GMAC1_RGMII_SPEED>;
+	assigned-clock-parents = <&cru SCLK_GMAC1_RGMII_SPEED>, <&cru CLK_MAC1_2TOP>;
 	assigned-clock-rates = <0>, <125000000>;
 
 	pinctrl-names = "default";
@@ -529,11 +519,15 @@
 	status = "okay";
 };
 
-&mdio1 {
-	status = "okay";
+&mdio0 {
+	rgmii_phy0: phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x0>;
+	};
+};
 
+&mdio1 {
 	rgmii_phy1: phy@0 {
-		status = "okay";
 		compatible = "ethernet-phy-ieee802.3-c22";
 		reg = <0x0>;
 	};
