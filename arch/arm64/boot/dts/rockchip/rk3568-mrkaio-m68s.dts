@@ -5,14 +5,16 @@
  */
 
 /dts-v1/;
-
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/pinctrl/rockchip.h>
 #include <dt-bindings/input/rk-input.h>
 #include <dt-bindings/display/drm_mipi_dsi.h>
+#include <dt-bindings/display/rockchip_vop.h>
 #include <dt-bindings/sensor-dev.h>
 #include "rk3568.dtsi"
+#include "rk3568-rock-3a-display.dtsi"
+#include "rk3568-rock-3ab-cameras.dtsi"
 
 / {
 	model = "EZPRO Mrkaio M68S";
@@ -52,6 +54,63 @@
 			<0x0 0xfd90f000 0x0 0x1000>;
 	};
 
+	adc_keys: adc-keys {
+		compatible = "adc-keys";
+		io-channels = <&saradc 0>;
+		io-channel-names = "buttons";
+		keyup-threshold-microvolt = <1800000>;
+		poll-interval = <100>;
+	};
+
+	audiopwmout_diff: audiopwmout-diff {
+		status = "disabled";
+		compatible = "simple-audio-card";
+		simple-audio-card,format = "i2s";
+		simple-audio-card,name = "rockchip,audiopwmout-diff";
+		simple-audio-card,mclk-fs = <256>;
+		simple-audio-card,bitclock-master = <&master>;
+		simple-audio-card,frame-master = <&master>;
+		simple-audio-card,cpu {
+			sound-dai = <&i2s3_2ch>;
+		};
+		master: simple-audio-card,codec {
+			sound-dai = <&dig_acodec>;
+		};
+	};
+
+	hdmi_sound: hdmi-sound {
+		compatible = "simple-audio-card";
+		simple-audio-card,format = "i2s";
+		simple-audio-card,mclk-fs = <128>;
+		simple-audio-card,name = "rockchip,hdmi";
+		status = "okay";
+
+		simple-audio-card,cpu {
+				sound-dai = <&i2s0_8ch>;
+		};
+		simple-audio-card,codec {
+				sound-dai = <&hdmi>;
+		};
+	};
+
+	pdmics: dummy-codec {
+		status = "disabled";
+		compatible = "rockchip,dummy-codec";
+		#sound-dai-cells = <0>;
+	};
+
+	pdm_mic_array: pdm-mic-array {
+		status = "disabled";
+		compatible = "simple-audio-card";
+		simple-audio-card,name = "rockchip,pdm-mic-array";
+		simple-audio-card,cpu {
+			sound-dai = <&pdm>;
+		};
+		simple-audio-card,codec {
+			sound-dai = <&pdmics>;
+		};
+	};
+
 	reserved-memory {
 		#address-cells = <2>;
 		#size-cells = <2>;
@@ -67,7 +126,7 @@
 	};
 
 	rk809_sound: rk809-sound {
-		status = "disabled";
+		status = "okay";
 		compatible = "simple-audio-card";
 		simple-audio-card,format = "i2s";
 		simple-audio-card,name = "rockchip,rk809-codec";
@@ -81,6 +140,33 @@
 		};
 	};
 
+	rk_headset: rk-headset {
+		compatible = "rockchip_headset";
+		headset_gpio = <&gpio2 RK_PD2 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&hp_det>;
+		io-channels = <&saradc 2>;    //HP_HOOK pin
+	};
+
+	dc_12v: dc-12v {
+		compatible = "regulator-fixed";
+		regulator-name = "dc_12v";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <12000000>;
+		regulator-max-microvolt = <12000000>;
+	};
+
+	vcc3v3_sys: vcc3v3-sys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc3v3_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <3300000>;
+		regulator-max-microvolt = <3300000>;
+		vin-supply = <&dc_12v>;
+	};
+
 	vcc5v0_sys: vcc5v0-sys {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc5v0_sys";
@@ -88,11 +174,44 @@
 		regulator-boot-on;
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
+		vin-supply = <&dc_12v>;
 	};
 
-	vcc3v3_sys: vcc3v3-sys {
+	vcc5v0_host: vcc5v0-host-regulator {
 		compatible = "regulator-fixed";
-		regulator-name = "vcc3v3_sys";
+		enable-active-high;
+		gpio = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&vcc5v0_host_en>;
+		regulator-name = "vcc5v0_host";
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
+	vcc5v0_otg: vcc5v0-otg-regulator {
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpio = <&gpio0 RK_PA5 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&vcc5v0_otg_en>;
+		regulator-name = "vcc5v0_otg";
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
+	vcc5v0_usbhub: vcc5v0-usbhub-regulator {
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpio = <&gpio0 RK_PD5 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&vcc5v0_hub_en>;
+		regulator-name = "vcc5v0_hub";
+		regulator-always-on;
+	};
+
+	vcc3v3_bu: vcc3v3-bu {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc3v3_bu";
 		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <3300000>;
@@ -103,55 +222,21 @@
 	gpio_leds: gpio-leds {
 		compatible = "gpio-leds";
 		status = "okay";
-		user_leds: user-led {
-			gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;	
+
+		user-led {
+			gpios = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "timer";
 			default-state = "on";
 			pinctrl-0 = <&user_led>;
 		};
-	};
 
-  vcc5v0_otg: vcc5v0-otg-regulator {
-		compatible = "regulator-fixed";
-		regulator-always-on;
-		regulator-boot-on;
-		enable-active-high;
-		gpio = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&vcc5v0_otg_en>;
-		regulator-name = "vcc5v0_otg";
-	};
-
-	rgb0: rgb0 {
-		compatible = "pwm-leds";
-		status = "okay";
-
-		rgb0-red {
-			pwms = <&pwm1 0 1000000 0>;
-			max-brightness = <255>;
-		};
-
-		rgb0-blue {
-			pwms = <&pwm12 0 1000000 0>;
-			max-brightness = <255>;
-		};
-
-		rgb0-green {
-			pwms = <&pwm2 0 1000000 0>;
-			max-brightness = <255>;
+		wifi-led {
+			gpios = <&gpio2 RK_PB0 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "rfkill2";
+			default-state = "on";
+			pinctrl-0 = <&wifi_led>;
 		};
 	};
-};
-
-&pmu_io_domains {
-	status = "okay";
-	pmuio2-supply = <&vcc_3v3>;
-	vccio1-supply = <&vccio_acodec>;
-	vccio3-supply = <&vccio_sd>;
-	vccio4-supply = <&vcc_1v8>;
-	vccio5-supply = <&vcc_3v3>;
-	vccio6-supply = <&vcc_1v8>;
-	vccio7-supply = <&vcc_3v3>;
 };
 
 &cpu0 {
@@ -167,11 +252,41 @@
 	status = "okay";
 };
 
+&video_phy0 {
+	status = "okay";
+};
+
+&display_subsystem {
+    status = "okay";
+};
+
 &gpu {
 	clock-names = "gpu", "bus";
 	interrupt-names = "gpu", "mmu", "job";
 	mali-supply = <&vdd_gpu>;
 	status = "okay";
+};
+
+&hdmi {
+	status = "okay";
+	pinctrl-0 = <&hdmitx_scl &hdmitx_sda &hdmitxm1_cec>;
+};
+
+&hdmi_in_vp0 {
+	status = "okay";
+};
+
+&hdmi_in_vp1 {
+	status = "disabled";
+};
+
+&hdmi_sound {
+	status = "okay";
+};
+
+&route_hdmi {
+	status = "okay";
+	connect = <&vp0_out_hdmi>;
 };
 
 &i2c0 {
@@ -347,8 +462,8 @@
 			vccio_acodec: LDO_REG4 {
 				regulator-always-on;
 				regulator-boot-on;
-				regulator-min-microvolt = <3300000>;
-				regulator-max-microvolt = <3300000>;
+				regulator-min-microvolt = <3000000>;
+				regulator-max-microvolt = <3000000>;
 				regulator-name = "vccio_acodec";
 				regulator-state-mem {
 					regulator-off-in-suspend;
@@ -440,34 +555,263 @@
 					regulator-off-in-suspend;
 				};
 			};
-
 		};
 
 		rk809_codec: codec {
 			#sound-dai-cells = <0>;
 			compatible = "rockchip,rk809-codec", "rockchip,rk817-codec";
-			clocks = <&cru I2S1_MCLKOUT_TX>;
+			clocks = <&cru I2S1_MCLKOUT>;
 			clock-names = "mclk";
-			assigned-clocks = <&cru I2S1_MCLKOUT_TX>;
-			assigned-clock-parents = <&cru CLK_I2S1_8CH_TX>;
+			assigned-clocks = <&cru I2S1_MCLKOUT>, <&cru I2S1_MCLK_TX_IOE>;
+			assigned-clock-rates = <12288000>;
+			assigned-clock-parents = <&cru I2S1_MCLKOUT_TX>, <&cru I2S1_MCLKOUT_TX>;
 			pinctrl-names = "default";
 			pinctrl-0 = <&i2s1m0_mclk>;
 			hp-volume = <20>;
 			spk-volume = <3>;
 			mic-in-differential;
-			status = "disabled";
+			status = "okay";
 		};
 	};
-}; 
+};
+
+&i2c5 {
+	status = "okay";	
+	pinctrl-0 = <&i2c5m0_xfer>;
+
+	hym8563: hym8563@51 {
+		compatible = "haoyu,hym8563";
+		status = "okay";
+		reg = <0x51>;
+		#clock-cells = <0>;
+		clock-frequency = <32768>;
+		clock-output-names = "hym8563";
+	};
+};
+
+&i2s0_8ch {
+	status = "okay";
+};
 
 &i2s1_8ch {
-	status = "disabled";
+	status = "okay";
 	rockchip,clk-trcm = <1>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&i2s1m0_sclktx
 		     &i2s1m0_lrcktx
 		     &i2s1m0_sdi0
 		     &i2s1m0_sdo0>;
+};
+
+&iep {
+	status = "okay";
+};
+
+&iep_mmu {
+	status = "okay";
+};
+
+&jpegd {
+	status = "okay";
+};
+
+&jpegd_mmu {
+	status = "okay";
+};
+
+&mpp_srv {
+	status = "okay";
+};
+
+&pmu_io_domains {
+	status = "okay";
+	pmuio2-supply = <&vcc3v3_pmu>;
+	vccio1-supply = <&vccio_acodec>;
+	vccio3-supply = <&vccio_sd>;
+	vccio4-supply = <&vcc_1v8>;
+	vccio5-supply = <&vcc_3v3>;
+	vccio6-supply = <&vcc_1v8>;
+	vccio7-supply = <&vcc_3v3>;
+};
+
+&rk_rga {
+	status = "okay";
+};
+
+&rkvdec {
+	status = "okay";
+};
+
+&rkvdec_mmu {
+	status = "okay";
+};
+
+&rkvenc {
+	venc-supply = <&vdd_logic>;
+	status = "okay";
+};
+
+&rkvenc_mmu {
+	status = "okay";
+};
+
+&bus_npu {
+	bus-supply = <&vdd_logic>;
+	pvtm-supply = <&vdd_cpu>;
+	status = "okay";
+};
+
+&rknpu {
+	memory-region = <&rknpu_reserved>;
+	rknpu-supply = <&vdd_npu>;
+	status = "okay";
+};
+
+&rknpu_mmu {
+	status = "okay";
+};
+
+&saradc {
+	status = "okay";
+	vref-supply = <&vcca_1v8>;
+};
+
+&sdhci {
+	bus-width = <8>;
+	supports-emmc;
+	non-removable;
+	max-frequency = <200000000>;
+	status = "okay";
+};
+
+&sdmmc0 {
+	max-frequency = <150000000>;
+	supports-sd;
+	bus-width = <4>;
+	cap-mmc-highspeed;
+	cap-sd-highspeed;
+	disable-wp;
+	sd-uhs-sdr104;
+	vmmc-supply = <&vcc3v3_sd>;
+	vqmmc-supply = <&vccio_sd>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
+	status = "okay";
+};
+
+&sfc {
+	status = "okay";
+};
+
+&tsadc {
+	status = "okay";
+};
+
+&u2phy0_host {
+	phy-supply = <&vcc5v0_host>;
+	status = "okay";
+};
+
+&u2phy0_otg {
+	vbus-supply = <&vcc5v0_otg>;
+	status = "okay";
+};
+
+&u2phy1_host {
+	phy-supply = <&vcc5v0_host>;
+	status = "okay";
+};
+
+&u2phy1_otg {
+	phy-supply = <&vcc5v0_host>;
+	status = "okay";
+};
+
+&usb2phy0 {
+	status = "okay";
+};
+
+&usb2phy1 {
+	status = "okay";
+};
+
+&usb_host0_ehci {
+	status = "okay";
+};
+
+&usb_host0_ohci {
+	status = "okay";
+};
+
+&usb_host1_ehci {
+	status = "okay";
+};
+
+&usb_host1_ohci {
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
+	extcon=<&usb2phy0>;
+	status="okay";
+};
+
+&usbdrd30 {
+	status = "okay";
+};
+
+&usbhost_dwc3 {
+	status = "okay";
+};
+
+&usbhost30 {
+	status = "okay";
+};
+
+&combphy0_us {
+	status = "okay";
+};
+
+&combphy1_usq {
+	status = "okay";
+};
+
+&sata0 {
+	status = "disabled";
+};
+
+&sata1 {
+	status = "disabled";
+};
+
+&xpcs {
+	status="disabled";
+};
+
+&vdpu {
+	status = "okay";
+};
+
+&vdpu_mmu {
+	status = "okay";
+};
+
+&vepu {
+	status = "okay";
+};
+
+&vepu_mmu {
+	status = "okay";
+};
+
+&vop {
+	status = "okay";
+	assigned-clocks = <&cru DCLK_VOP0>, <&cru DCLK_VOP1>;
+	assigned-clock-parents = <&pmucru PLL_HPLL>, <&cru PLL_VPLL>;
+};
+
+&vop_mmu {
+	status = "okay";
 };
 
 &gmac0 {
@@ -538,122 +882,7 @@
 	};
 };
 
-&iep {
-	status = "okay";
-};
-
-&iep_mmu {
-	status = "okay";
-};
-
-&jpegd {
-	status = "okay";
-};
-
-&jpegd_mmu {
-	status = "okay";
-};
-
-&mpp_srv {
-	status = "okay";
-};
-
-&rk_rga {
-	status = "okay";
-};
-
-&rkvdec {
-	status = "okay";
-};
-
-&rkvdec_mmu {
-	status = "okay";
-};
-
-&rkvenc {
-	venc-supply = <&vdd_logic>;
-	status = "okay";
-};
-
-&rkvenc_mmu {
-	status = "okay";
-};
-
-&bus_npu {
-	bus-supply = <&vdd_logic>;
-	pvtm-supply = <&vdd_cpu>;
-	status = "okay";
-};
-
-&rknpu {
-	memory-region = <&rknpu_reserved>;
-	rknpu-supply = <&vdd_npu>;
-	status = "okay";
-};
-
-&rknpu_mmu {
-	status = "okay";
-};
-
-&saradc {
-	status = "okay";
-	vref-supply = <&vcca_1v8>;
-};
-
-&sdhci {
-	bus-width = <8>;
-	supports-emmc;
-	non-removable;
-	max-frequency = <200000000>;
-	status = "okay";
-};
-
-//sdcard
-&sdmmc0 {
-	bus-width = <4>;
-	cap-mmc-highspeed;
-	cap-sd-highspeed;
-	disable-wp;
-	sd-uhs-sdr50;
-	vmmc-supply = <&vcc3v3_sd>;
-	vqmmc-supply = <&vccio_sd>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd>;
-	cd-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
-	status = "okay";
-};
-
-&sfc {
-	status = "okay";
-};
-
-&tsadc {
-	status = "okay";
-};
-
-&vdpu {
-	status = "okay";
-};
-
-&vdpu_mmu {
-	status = "okay";
-};
-
-&vepu {
-	status = "okay";
-};
-
-&vepu_mmu {
-	status = "okay";
-};
-
-&vop {
-	status = "okay";
-	assigned-clocks = <&cru DCLK_VOP0>, <&cru DCLK_VOP1>;
-	assigned-clock-parents = <&pmucru PLL_HPLL>, <&cru PLL_VPLL>;
-};
-
-&vop_mmu {
+&combphy2_psq {
 	status = "okay";
 };
 
@@ -663,6 +892,12 @@
 
 &rkisp_mmu {
 	status = "okay";
+};
+
+&uart1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1m0_xfer &uart1m0_ctsn>;
 };
 
 &reserved_memory {
@@ -707,152 +942,38 @@
 		};
 	};
 
-	leds {
-		user_led: user-led {
+	usb {
+		vcc5v0_host_en: vcc5v0-host-en {
 			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
+
+		vcc5v0_otg_en: vcc5v0-otg-en {
+			rockchip,pins = <0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		vcc5v0_hub_en: vcc5v0-hub-en {
+			rockchip,pins = <0 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
 	};
 
-  usb {
-		vcc5v0_otg_en: vcc5v0-otg-en {
+	headphone {
+		hp_det: hp-det {
+			rockchip,pins = <2 RK_PD2 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	leds {
+		user_led: user-led {
 			rockchip,pins = <0 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		wifi_led: wifi-led {
+			rockchip,pins = <2 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 };
 
-&fiq_debugger {
-	rockchip,baudrate = <115200>;
-};
-
-&u2phy0_host {
-	phy-supply = <&vcc5v0_otg>;
-	status = "okay";
-};
-
-&u2phy0_otg {
-	vbus-supply = <&vcc5v0_otg>;
-	status = "okay";
-};
-
-&u2phy1_host {
-	phy-supply = <&vcc5v0_otg>;
-	status = "okay";
-};
-
-&u2phy1_otg {
-	phy-supply = <&vcc5v0_otg>;
-	status = "okay";
-};
-
-/* USB OTG/USB Host_1 USB 2.0 Comb PHY_0 */
-&usb2phy0 {
-	status = "okay";
-	u2phy0_host {
-        status = "okay";
-	};
-	u2phy0_otg {
-		 status = "okay";
-	};
-};
-
-/* USB Host_2/USB Host_3 USB 2.0 Comb PHY_1 */
-&usb2phy1 {
-	status = "okay";
-	u2phy1_host {
-        status = "okay";
-	};
-	u2phy1_otg {
-         status = "okay";
-	};
-};
-
-/* USB 2.0 Host_2 EHCI controller for high speed */
-&usb_host0_ehci {
-	status = "okay";
-};
-
-/* USB 2.0 Host_2 OHCI controller for full/low speed */
-&usb_host0_ohci {
-	status = "okay";
-};
-
-/* USB 2.0 Host_3 EHCI controller for high speed */
-&usb_host1_ehci {
-	status = "okay";
-};
-
-/* USB 2.0 Host_3 OHCI controller for full/low speed */
-&usb_host1_ohci {
-	status = "okay";
-};
-
-&usbdrd_dwc3 {
-	extcon=<&usb2phy0>;
-	status="okay";
-};
-
-/* USB 3.0 OTG controller */
-&usbdrd30 {
-	status = "okay";
-};
-
-&usbhost_dwc3 {
-	phys = <&u2phy0_host>;
-	phy-names = "usb2-phy";
-	maximum-speed = "high-speed"; /* set dwc3 controller to high speed */
-	status = "okay";
-};
-
-/* USB 3.0 Host_1 controller */
-&usbhost30 {
-	status = "disabled";
-};
-
-/* USB 3.0 OTG/SATA Combo PHY_0 */
-&combphy0_us {
-	status = "okay";
-};
-
-/* USB 3.0 Host/SATA/QSGMII Combo PHY_1 */
-&combphy1_usq {
-	rockchip,dis-u3otg1-port; /* set dwc3 controller to high speed */
-	status = "okay";
-};
-
-&sata1 {
-	status = "okay";
-};
-
-&combphy2_psq {
-	status = "okay";
-};
-
-&pcie2x1 {
-	reset-gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
-	vpcie3v3-supply = <&pcie30_3v3>;
-	pinctrl-0 = <&pcie20m2_pins>; 
-	status = "okay";
-};
-
-&pwm1 {
-	status = "okay";
-	pinctrl-names = "active";
-	pinctrl-0 = <&pwm1m0_pins>;
-};
-
-&pwm2 {
-	status = "okay";
-	pinctrl-names = "active";
-	pinctrl-0 = <&pwm2m0_pins>;
-};
-
-&pwm12 {
-	status = "okay";
-	pinctrl-names = "active";
-	pinctrl-0 = <&pwm12m1_pins>;
-};
-
-&user_leds {
-	linux,default-trigger = "none";
-	default-state = "off";
+&vp0 {
+	rockchip,plane-mask = <(1 << ROCKCHIP_VOP2_CLUSTER0 | 1 << ROCKCHIP_VOP2_ESMART0)>;
+	rockchip,primary-plane = <ROCKCHIP_VOP2_ESMART0>;
 };
