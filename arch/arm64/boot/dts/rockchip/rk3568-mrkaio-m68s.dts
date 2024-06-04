@@ -15,8 +15,13 @@
 #include "rk3568.dtsi"
 
 / {
-  model = "EZPRO Mrkaio M68S";
+	model = "EZPRO Mrkaio M68S";
 	compatible = "ezpro,mrkaio-m68s", "rockchip,rk3568";
+
+	aliases {
+		ethernet0 = &gmac0;
+		ethernet1 = &gmac1;
+	};
 
 	fiq_debugger: fiq-debugger {
 		compatible = "rockchip,fiq-debugger";
