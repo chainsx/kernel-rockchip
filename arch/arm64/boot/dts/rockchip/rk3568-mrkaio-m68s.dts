@@ -13,8 +13,6 @@
 #include <dt-bindings/display/rockchip_vop.h>
 #include <dt-bindings/sensor-dev.h>
 #include "rk3568.dtsi"
-#include "rk3568-rock-3a-display.dtsi"
-#include "rk3568-rock-3ab-cameras.dtsi"
 
 / {
 	model = "EZPRO Mrkaio M68S";
@@ -180,9 +178,9 @@
 	vcc5v0_host: vcc5v0-host-regulator {
 		compatible = "regulator-fixed";
 		enable-active-high;
-		gpio = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio0 RK_PA5 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&vcc5v0_host_en>;
+		pinctrl-0 = <&vcc5v0_usb_host_en>;
 		regulator-name = "vcc5v0_host";
 		regulator-always-on;
 		regulator-boot-on;
@@ -191,22 +189,12 @@
 	vcc5v0_otg: vcc5v0-otg-regulator {
 		compatible = "regulator-fixed";
 		enable-active-high;
-		gpio = <&gpio0 RK_PA5 GPIO_ACTIVE_HIGH>;
+		gpio = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&vcc5v0_otg_en>;
+		pinctrl-0 = <&vcc5v0_usb_otg_en>;
 		regulator-name = "vcc5v0_otg";
 		regulator-always-on;
 		regulator-boot-on;
-	};
-
-	vcc5v0_usbhub: vcc5v0-usbhub-regulator {
-		compatible = "regulator-fixed";
-		enable-active-high;
-		gpio = <&gpio0 RK_PD5 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&vcc5v0_hub_en>;
-		regulator-name = "vcc5v0_hub";
-		regulator-always-on;
 	};
 
 	vcc3v3_bu: vcc3v3-bu {
@@ -223,19 +211,39 @@
 		compatible = "gpio-leds";
 		status = "okay";
 
-		user-led {
-			gpios = <&gpio0 RK_PB7 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "timer";
+		led-disk {
+			gpios = <&gpio0 RK_PC2 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
-			pinctrl-0 = <&user_led>;
+			pinctrl-0 = <&disk_led_pin>;
 		};
 
-		wifi-led {
-			gpios = <&gpio2 RK_PB0 GPIO_ACTIVE_HIGH>;
-			linux,default-trigger = "rfkill2";
+		power-led {
+			gpios = <&gpio2 RK_PC4 GPIO_ACTIVE_HIGH>;
 			default-state = "on";
-			pinctrl-0 = <&wifi_led>;
+			pinctrl-0 = <&power_led_pin>;
 		};
+	};
+
+	switch_otg: switch-otg-regulator {
+		compatible = "regulator-fixed";
+		gpio = <&gpio0 RK_PD6 GPIO_ACTIVE_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&usb_otg_switch_en>;
+		regulator-name = "switch_otg";
+		regulator-always-on;
+	};
+
+	vcc5v0_ahci: vcc5v0-ahci-regulator {
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpio = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&sata_pwr_en>;
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		regulator-name = "vcc5v0_ahci";
 	};
 };
 
@@ -269,7 +277,13 @@
 
 &hdmi {
 	status = "okay";
-	pinctrl-0 = <&hdmitx_scl &hdmitx_sda &hdmitxm1_cec>;
+	rockchip,phy-table =
+		<92812500  0x8009 0x0000 0x0270>,
+		<165000000 0x800b 0x0000 0x026d>,
+		<185625000 0x800b 0x0000 0x01ed>,
+		<297000000 0x800b 0x0000 0x01ad>,
+		<594000000 0x8029 0x0000 0x0088>,
+		<000000000 0x0000 0x0000 0x0000>;
 };
 
 &hdmi_in_vp0 {
@@ -943,16 +957,16 @@
 	};
 
 	usb {
-		vcc5v0_host_en: vcc5v0-host-en {
-			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
-
-		vcc5v0_otg_en: vcc5v0-otg-en {
+		vcc5v0_usb_host_en: vcc5v0-usb-host-en {
 			rockchip,pins = <0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 
-		vcc5v0_hub_en: vcc5v0-hub-en {
-			rockchip,pins = <0 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
+		vcc5v0_usb_otg_en: vcc5v0-usb-otg-en {
+			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+
+		usb_otg_switch_en: usb-otg-switch-en {
+			rockchip,pins = <0 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
@@ -963,12 +977,18 @@
 	};
 
 	leds {
-		user_led: user-led {
-			rockchip,pins = <0 RK_PB7 RK_FUNC_GPIO &pcfg_pull_none>;
+		disk_led_pin: disk-led-pin {
+			rockchip,pins = <0 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 
-		wifi_led: wifi-led {
-			rockchip,pins = <2 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
+		power_led_pin: power-led-pin {
+			rockchip,pins = <4 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	sata {
+		sata_pwr_en: sata-pwr-en {
+			rockchip,pins = <0 RK_PB6 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 };
