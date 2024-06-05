@@ -798,6 +798,11 @@
 	status = "disabled";
 };
 
+&sata2 {
+	target-supply = <&vcc5v0_ahci>;
+	status = "okay";
+};
+
 &xpcs {
 	status="disabled";
 };
