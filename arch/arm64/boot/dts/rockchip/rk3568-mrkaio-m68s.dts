@@ -908,12 +908,6 @@
 	status = "okay";
 };
 
-&uart1 {
-	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&uart1m0_xfer &uart1m0_ctsn>;
-};
-
 &reserved_memory {
 	ramoops: ramoops@110000 {
 		compatible = "ramoops";
