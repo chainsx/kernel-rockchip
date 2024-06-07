@@ -47,6 +47,7 @@
 #include "rk3399-opp.dtsi"
 #include "rk3399-linux.dtsi"
 #include <dt-bindings/input/input.h>
+#include "rk3399-firefly-tf-hdmi-mipi-rk628.dtsi"
 
 / {
 	model = "Rockchip RK3399 Firefly Board (Linux Opensource)";
