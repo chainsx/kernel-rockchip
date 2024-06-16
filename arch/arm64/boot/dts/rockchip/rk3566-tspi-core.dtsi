@@ -3,33 +3,22 @@
  * Copyright (c) 2020 Rockchip Electronics Co., Ltd.
  *
  */
-
-/dts-v1/;
+ 
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/pinctrl/rockchip.h>
 #include <dt-bindings/input/rk-input.h>
 #include <dt-bindings/display/drm_mipi_dsi.h>
-#include <dt-bindings/display/rockchip_vop.h>
 #include <dt-bindings/sensor-dev.h>
-#include "rk3568.dtsi"
 
 / {
-	model = "EZPRO Mrkaio M68S";
-	compatible = "ezpro,mrkaio-m68s", "rockchip,rk3568";
-
-	aliases {
-		ethernet0 = &gmac0;
-		ethernet1 = &gmac1;
-	};
-
-	fiq_debugger: fiq-debugger {
+	fiq-debugger {
 		compatible = "rockchip,fiq-debugger";
 		rockchip,serial-id = <2>;
 		rockchip,wake-irq = <0>;
 		/* If enable uart uses irq instead of fiq */
 		rockchip,irq-mode-enable = <1>;
-		rockchip,baudrate = <1500000>;  /* Only 115200 and 1500000 */
+		rockchip,baudrate = <115200>;  /* Only 115200 and 1500000 */
 		interrupts = <GIC_SPI 252 IRQ_TYPE_LEVEL_LOW>;
 		pinctrl-names = "default";
 		pinctrl-0 = <&uart2m0_xfer>;
@@ -58,6 +47,12 @@
 		io-channel-names = "buttons";
 		keyup-threshold-microvolt = <1800000>;
 		poll-interval = <100>;
+
+		restart-key {
+			label = "restart";
+			linux,code = <KEY_RESTART>;
+			press-threshold-microvolt = <108>;
+		};
 	};
 
 	audiopwmout_diff: audiopwmout-diff {
@@ -76,19 +71,13 @@
 		};
 	};
 
-	hdmi_sound: hdmi-sound {
-		compatible = "simple-audio-card";
-		simple-audio-card,format = "i2s";
-		simple-audio-card,mclk-fs = <128>;
-		simple-audio-card,name = "rockchip,hdmi";
-		status = "okay";
-
-		simple-audio-card,cpu {
-				sound-dai = <&i2s0_8ch>;
-		};
-		simple-audio-card,codec {
-				sound-dai = <&hdmi>;
-		};
+	dc_12v: dc-12v {
+		compatible = "regulator-fixed";
+		regulator-name = "dc_12v";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <12000000>;
+		regulator-max-microvolt = <12000000>;
 	};
 
 	pdmics: dummy-codec {
@@ -109,20 +98,6 @@
 		};
 	};
 
-	reserved-memory {
-		#address-cells = <2>;
-		#size-cells = <2>;
-		ranges;
-
-		rknpu_reserved: rknpu {
-			compatible = "shared-dma-pool";
-			inactive;
-			reusable;
-			size = <0x0 0x20000000>;
-			alignment = <0x0 0x1000>;
-		};
-	};
-
 	rk809_sound: rk809-sound {
 		status = "okay";
 		compatible = "simple-audio-card";
@@ -138,21 +113,30 @@
 		};
 	};
 
-	rk_headset: rk-headset {
-		compatible = "rockchip_headset";
-		headset_gpio = <&gpio2 RK_PD2 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&hp_det>;
-		io-channels = <&saradc 2>;    //HP_HOOK pin
+	spdif-sound {
+		status = "disabled";
+		compatible = "simple-audio-card";
+		simple-audio-card,name = "ROCKCHIP,SPDIF";
+		simple-audio-card,cpu {
+				sound-dai = <&spdif_8ch>;
+		};
+		simple-audio-card,codec {
+				sound-dai = <&spdif_out>;
+		};
 	};
 
-	dc_12v: dc-12v {
-		compatible = "regulator-fixed";
-		regulator-name = "dc_12v";
-		regulator-always-on;
-		regulator-boot-on;
-		regulator-min-microvolt = <12000000>;
-		regulator-max-microvolt = <12000000>;
+	spdif_out: spdif-out {
+			status = "disabled";
+			compatible = "linux,spdif-dit";
+			#sound-dai-cells = <0>;
+	};
+
+	vad_sound: vad-sound {
+		status = "disabled";
+		compatible = "rockchip,multicodecs-card";
+		rockchip,card-name = "rockchip,rk3568-vad";
+		rockchip,cpu = <&i2s1_8ch>;
+		rockchip,codec = <&rk809_codec>, <&vad>;
 	};
 
 	vcc3v3_sys: vcc3v3-sys {
@@ -162,7 +146,7 @@
 		regulator-boot-on;
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
-		vin-supply = <&dc_12v>;
+		vin-supply = <&vcc5v0_sys>;
 	};
 
 	vcc5v0_sys: vcc5v0-sys {
@@ -175,133 +159,162 @@
 		vin-supply = <&dc_12v>;
 	};
 
-	vcc5v0_host: vcc5v0-host-regulator {
+	vcc5v0_usb: vcc5v0-usb {
 		compatible = "regulator-fixed";
-		enable-active-high;
-		gpio = <&gpio0 RK_PA5 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&vcc5v0_usb_host_en>;
-		regulator-name = "vcc5v0_host";
-		regulator-always-on;
-		regulator-boot-on;
-	};
-
-	vcc5v0_otg: vcc5v0-otg-regulator {
-		compatible = "regulator-fixed";
-		enable-active-high;
-		gpio = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&vcc5v0_usb_otg_en>;
-		regulator-name = "vcc5v0_otg";
-		regulator-always-on;
-		regulator-boot-on;
-	};
-
-	vcc3v3_bu: vcc3v3-bu {
-		compatible = "regulator-fixed";
-		regulator-name = "vcc3v3_bu";
-		regulator-always-on;
-		regulator-boot-on;
-		regulator-min-microvolt = <3300000>;
-		regulator-max-microvolt = <3300000>;
-		vin-supply = <&vcc5v0_sys>;
-	};
-
-	gpio_leds: gpio-leds {
-		compatible = "gpio-leds";
-		status = "okay";
-
-		led-disk {
-			gpios = <&gpio0 RK_PC2 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
-			pinctrl-0 = <&disk_led_pin>;
-		};
-
-		power-led {
-			gpios = <&gpio2 RK_PC4 GPIO_ACTIVE_HIGH>;
-			default-state = "on";
-			pinctrl-0 = <&power_led_pin>;
-		};
-	};
-
-	switch_otg: switch-otg-regulator {
-		compatible = "regulator-fixed";
-		gpio = <&gpio0 RK_PD6 GPIO_ACTIVE_LOW>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&usb_otg_switch_en>;
-		regulator-name = "switch_otg";
-		regulator-always-on;
-	};
-
-	vcc5v0_ahci: vcc5v0-ahci-regulator {
-		compatible = "regulator-fixed";
-		enable-active-high;
-		gpio = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&sata_pwr_en>;
+		regulator-name = "vcc5v0_usb";
 		regulator-always-on;
 		regulator-boot-on;
 		regulator-min-microvolt = <5000000>;
 		regulator-max-microvolt = <5000000>;
-		regulator-name = "vcc5v0_ahci";
+	};
+
+	vcc5v0_host: vcc5v0-host-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc5v0_host";
+		regulator-boot-on;
+		regulator-always-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		enable-active-high;
+		gpio = <&gpio4 RK_PC4 GPIO_ACTIVE_HIGH>;
+		vin-supply = <&vcc5v0_usb>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&vcc5v0_host_en>;
+	};
+
+	sdio_pwrseq: sdio-pwrseq {
+		compatible = "mmc-pwrseq-simple";
+		clocks = <&rk809 1>;
+		clock-names = "ext_clock";
+		pinctrl-names = "default";
+		pinctrl-0 = <&wifi_enable_h>;
+
+		/*
+		 * On the module itself this is one of these (depending
+		 * on the actual card populated):
+		 * - SDIO_RESET_L_WL_REG_ON
+		 * - PDN (power down when low)
+		 */
+		post-power-on-delay-ms = <200>;
+		reset-gpios = <&gpio2 RK_PB1 GPIO_ACTIVE_LOW>;
+	};
+
+	wireless_wlan: wireless-wlan {
+		compatible = "wlan-platdata";
+		pinctrl-names = "default";
+		pinctrl-0 = <&wifi_host_wake_irq>;
+		WIFI,host_wake_irq = <&gpio2 RK_PB2 GPIO_ACTIVE_HIGH>;
+		rockchip,grf = <&grf>;
+		wifi_chip_type = "ap6212";
+		status = "okay";
+	};
+
+	wireless_bluetooth: wireless-bluetooth {
+		compatible = "bluetooth-platdata";
+		clocks = <&rk809 1>;
+		clock-names = "ext_clock";
+		//wifi-bt-power-toggle;
+		uart_rts_gpios = <&gpio2 RK_PB5 GPIO_ACTIVE_LOW>;
+		pinctrl-names = "default", "rts_gpio";
+		pinctrl-0 = <&uart1m0_rtsn>;
+		pinctrl-1 = <&uart1_gpios>;
+		BT,reset_gpio    = <&gpio2 RK_PB7 GPIO_ACTIVE_HIGH>;
+		BT,wake_gpio     = <&gpio2 RK_PC1 GPIO_ACTIVE_HIGH>;
+		BT,wake_host_irq = <&gpio2 RK_PC0 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+	test-power {
+		status = "okay";
 	};
 };
 
+&reserved_memory {
+	ramoops: ramoops@110000 {
+		compatible = "ramoops";
+		reg = <0x0 0x110000 0x0 0xf0000>;
+		record-size = <0x20000>;
+		console-size = <0x80000>;
+		ftrace-size = <0x00000>;
+		pmsg-size = <0x50000>;
+	};
+};
+
+&rng {
+	status = "okay";
+};
+
+
+&rockchip_suspend {
+	status = "okay";
+};
+
+&vop {
+	disable-win-move;
+};
+
+&vp0 {
+	cursor-win-id = <ROCKCHIP_VOP2_ESMART0>;
+};
+
+&vp1 {
+	cursor-win-id = <ROCKCHIP_VOP2_ESMART1>;
+};
+
+//npu总线
+&bus_npu {
+	bus-supply = <&vdd_logic>;
+	pvtm-supply = <&vdd_cpu>;
+	status = "okay";
+};
+
+//can0接口
+&can0 {
+	assigned-clocks = <&cru CLK_CAN0>;
+	assigned-clock-rates = <150000000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&can0m1_pins>;
+	status = "disabled";
+};
+//can1接口
+&can1 {
+	assigned-clocks = <&cru CLK_CAN1>;
+	assigned-clock-rates = <150000000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&can1m1_pins>;
+	status = "disabled";
+};
+//can2接口
+&can2 {
+	assigned-clocks = <&cru CLK_CAN2>;
+	assigned-clock-rates = <150000000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&can2m1_pins>;
+	status = "disabled";
+};
+
+//cpu0
 &cpu0 {
 	cpu-supply = <&vdd_cpu>;
 };
 
+//dram phy接口
 &dfi {
 	status = "okay";
 };
 
+//dram内存控制
 &dmc {
 	center-supply = <&vdd_logic>;
 	status = "okay";
 };
 
-&video_phy0 {
-	status = "okay";
-};
-
-&display_subsystem {
-    status = "okay";
-};
-
+//GPU图像处理
 &gpu {
-	clock-names = "gpu", "bus";
-	interrupt-names = "gpu", "mmu", "job";
 	mali-supply = <&vdd_gpu>;
 	status = "okay";
 };
 
-&hdmi {
-	status = "okay";
-	rockchip,phy-table =
-		<92812500  0x8009 0x0000 0x0270>,
-		<165000000 0x800b 0x0000 0x026d>,
-		<185625000 0x800b 0x0000 0x01ed>,
-		<297000000 0x800b 0x0000 0x01ad>,
-		<594000000 0x8029 0x0000 0x0088>,
-		<000000000 0x0000 0x0000 0x0000>;
-};
-
-&hdmi_in_vp0 {
-	status = "okay";
-};
-
-&hdmi_in_vp1 {
-	status = "disabled";
-};
-
-&hdmi_sound {
-	status = "okay";
-};
-
-&route_hdmi {
-	status = "okay";
-	connect = <&vp0_out_hdmi>;
-};
 
 &i2c0 {
 	status = "okay";
@@ -476,8 +489,8 @@
 			vccio_acodec: LDO_REG4 {
 				regulator-always-on;
 				regulator-boot-on;
-				regulator-min-microvolt = <3000000>;
-				regulator-max-microvolt = <3000000>;
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
 				regulator-name = "vccio_acodec";
 				regulator-state-mem {
 					regulator-off-in-suspend;
@@ -589,24 +602,6 @@
 	};
 };
 
-&i2c5 {
-	status = "okay";	
-	pinctrl-0 = <&i2c5m0_xfer>;
-
-	hym8563: hym8563@51 {
-		compatible = "haoyu,hym8563";
-		status = "okay";
-		reg = <0x51>;
-		#clock-cells = <0>;
-		clock-frequency = <32768>;
-		clock-output-names = "hym8563";
-	};
-};
-
-&i2s0_8ch {
-	status = "okay";
-};
-
 &i2s1_8ch {
 	status = "okay";
 	rockchip,clk-trcm = <1>;
@@ -617,319 +612,26 @@
 		     &i2s1m0_sdo0>;
 };
 
+//像增强处理器,锐化降噪等等
 &iep {
 	status = "okay";
 };
-
+//像增强处理器,内存管理单元
 &iep_mmu {
 	status = "okay";
 };
 
+//硬件jpeg解码
 &jpegd {
 	status = "okay";
 };
-
+//jpeg内存管理
 &jpegd_mmu {
 	status = "okay";
 };
 
+//媒体处理平台服务模块提供音视频编解码服务灯
 &mpp_srv {
-	status = "okay";
-};
-
-&pmu_io_domains {
-	status = "okay";
-	pmuio2-supply = <&vcc3v3_pmu>;
-	vccio1-supply = <&vccio_acodec>;
-	vccio3-supply = <&vccio_sd>;
-	vccio4-supply = <&vcc_1v8>;
-	vccio5-supply = <&vcc_3v3>;
-	vccio6-supply = <&vcc_1v8>;
-	vccio7-supply = <&vcc_3v3>;
-};
-
-&rk_rga {
-	status = "okay";
-};
-
-&rkvdec {
-	status = "okay";
-};
-
-&rkvdec_mmu {
-	status = "okay";
-};
-
-&rkvenc {
-	venc-supply = <&vdd_logic>;
-	status = "okay";
-};
-
-&rkvenc_mmu {
-	status = "okay";
-};
-
-&bus_npu {
-	bus-supply = <&vdd_logic>;
-	pvtm-supply = <&vdd_cpu>;
-	status = "okay";
-};
-
-&rknpu {
-	memory-region = <&rknpu_reserved>;
-	rknpu-supply = <&vdd_npu>;
-	status = "okay";
-};
-
-&rknpu_mmu {
-	status = "okay";
-};
-
-&saradc {
-	status = "okay";
-	vref-supply = <&vcca_1v8>;
-};
-
-&sdhci {
-	bus-width = <8>;
-	supports-emmc;
-	non-removable;
-	max-frequency = <200000000>;
-	status = "okay";
-};
-
-&sdmmc0 {
-	max-frequency = <150000000>;
-	supports-sd;
-	bus-width = <4>;
-	cap-mmc-highspeed;
-	cap-sd-highspeed;
-	disable-wp;
-	sd-uhs-sdr104;
-	vmmc-supply = <&vcc3v3_sd>;
-	vqmmc-supply = <&vccio_sd>;
-	pinctrl-names = "default";
-	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
-	status = "okay";
-};
-
-&sfc {
-	status = "okay";
-};
-
-&tsadc {
-	status = "okay";
-};
-
-&u2phy0_host {
-	phy-supply = <&vcc5v0_host>;
-	status = "okay";
-};
-
-&u2phy0_otg {
-	vbus-supply = <&vcc5v0_otg>;
-	status = "okay";
-};
-
-&u2phy1_host {
-	phy-supply = <&vcc5v0_host>;
-	status = "okay";
-};
-
-&u2phy1_otg {
-	phy-supply = <&vcc5v0_otg>;
-	status = "okay";
-};
-
-&usb2phy0 {
-	status = "okay";
-};
-
-&usb2phy1 {
-	status = "okay";
-};
-
-&usb_host0_ehci {
-	status = "okay";
-};
-
-&usb_host0_ohci {
-	status = "okay";
-};
-
-&usb_host1_ehci {
-	status = "okay";
-};
-
-&usb_host1_ohci {
-	status = "okay";
-};
-
-&usbdrd_dwc3 
-	dr_mode = "otg";
-	extcon=<&usb2phy0>;
-	status="okay";
-};
-
-&usbdrd30 {
-	status = "okay";
-};
-
-&usbhost_dwc3 {
-	status = "okay";
-};
-
-&usbhost30 {
-	status = "okay";
-};
-
-&combphy0_us {
-	status = "okay";
-};
-
-&combphy1_usq {
-	status = "okay";
-};
-
-&sata0 {
-	status = "disabled";
-};
-
-&sata1 {
-	status = "disabled";
-};
-
-&sata2 {
-	target-supply = <&vcc5v0_ahci>;
-	status = "okay";
-};
-
-&xpcs {
-	status="disabled";
-};
-
-&vdpu {
-	status = "okay";
-};
-
-&vdpu_mmu {
-	status = "okay";
-};
-
-&vepu {
-	status = "okay";
-};
-
-&vepu_mmu {
-	status = "okay";
-};
-
-&vop {
-	status = "okay";
-	assigned-clocks = <&cru DCLK_VOP0>, <&cru DCLK_VOP1>;
-	assigned-clock-parents = <&pmucru PLL_HPLL>, <&cru PLL_VPLL>;
-};
-
-&vop_mmu {
-	status = "okay";
-};
-
-&gmac0 {
-	phy-mode = "rgmii";
-	clock_in_out = "output";
-
-	snps,reset-gpio = <&gpio3 RK_PA6 GPIO_ACTIVE_LOW>;
-	snps,reset-active-low;
-	/* Reset time is 20ms, 100ms for rtl8211f */
-	snps,reset-delays-us = <0 20000 100000>;
-
-	assigned-clocks = <&cru SCLK_GMAC0_RX_TX>, <&cru SCLK_GMAC0>;
-	assigned-clock-parents = <&cru SCLK_GMAC0_RGMII_SPEED>, <&cru CLK_MAC0_2TOP>;
-	assigned-clock-rates = <0>, <125000000>;
-
-	pinctrl-names = "default";
-	pinctrl-0 = <&gmac0_miim
-		     &gmac0_tx_bus2
-		     &gmac0_rx_bus2
-		     &gmac0_rgmii_clk
-		     &gmac0_rgmii_bus>;
-
-	tx_delay = <0x3c>;
-	rx_delay = <0x2f>;
-
-	phy-handle = <&rgmii_phy0>;
-	status = "okay";
-};
-
-&gmac1 {
-	phy-mode = "rgmii";
-	clock_in_out = "output";
-
-	snps,reset-gpio = <&gpio3 RK_PA7 GPIO_ACTIVE_LOW>;
-	snps,reset-active-low;
-	/* Reset time is 20ms, 100ms for rtl8211f */
-	snps,reset-delays-us = <0 20000 100000>;
-
-	assigned-clocks = <&cru SCLK_GMAC1_RX_TX>, <&cru SCLK_GMAC1>;
-	assigned-clock-parents = <&cru SCLK_GMAC1_RGMII_SPEED>, <&cru CLK_MAC1_2TOP>;
-	assigned-clock-rates = <0>, <125000000>;
-
-	pinctrl-names = "default";
-	pinctrl-0 = <&gmac1m1_miim
-		     &gmac1m1_tx_bus2
-		     &gmac1m1_rx_bus2
-		     &gmac1m1_rgmii_clk
-		     &gmac1m1_rgmii_bus>;
-
-	tx_delay = <0x42>;
-	rx_delay = <0x28>;
-
-	phy-handle = <&rgmii_phy1>;
-	status = "okay";
-};
-
-&mdio0 {
-	rgmii_phy0: phy@0 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <0x0>;
-	};
-};
-
-&mdio1 {
-	rgmii_phy1: phy@0 {
-		compatible = "ethernet-phy-ieee802.3-c22";
-		reg = <0x0>;
-	};
-};
-
-&combphy2_psq {
-	status = "okay";
-};
-
-&rkisp {
-	status = "okay";
-};
-
-&rkisp_mmu {
-	status = "okay";
-};
-
-&reserved_memory {
-	ramoops: ramoops@110000 {
-		compatible = "ramoops";
-		reg = <0x0 0x110000 0x0 0xf0000>;
-		record-size = <0x20000>;
-		console-size = <0x80000>;
-		ftrace-size = <0x00000>;
-		pmsg-size = <0x50000>;
-	};
-};
-
-&rng {
-	status = "okay";
-};
-
-&rockchip_suspend {
 	status = "okay";
 };
 
@@ -957,43 +659,288 @@
 	};
 
 	usb {
-		vcc5v0_usb_host_en: vcc5v0-usb-host-en {
-			rockchip,pins = <0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
-
-		vcc5v0_usb_otg_en: vcc5v0-usb-otg-en {
-			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
-
-		usb_otg_switch_en: usb-otg-switch-en {
-			rockchip,pins = <0 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
-	};
-
-	headphone {
-		hp_det: hp-det {
-			rockchip,pins = <2 RK_PD2 RK_FUNC_GPIO &pcfg_pull_up>;
-		};
-	};
-
-	leds {
-		disk_led_pin: disk-led-pin {
-			rockchip,pins = <0 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
-
-		power_led_pin: power-led-pin {
+		vcc5v0_host_en: vcc5v0-host-en {
 			rockchip,pins = <4 RK_PC4 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 
-	sata {
-		sata_pwr_en: sata-pwr-en {
-			rockchip,pins = <0 RK_PB6 RK_FUNC_GPIO &pcfg_pull_none>;
+	sdio-pwrseq {
+		wifi_enable_h: wifi-enable-h {
+			rockchip,pins = <2 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	wireless-wlan {
+		wifi_host_wake_irq: wifi-host-wake-irq {
+			rockchip,pins = <2 RK_PB2 RK_FUNC_GPIO &pcfg_pull_down>;
+		};
+	};
+
+	wireless-bluetooth {
+		uart1_gpios: uart1-gpios {
+			rockchip,pins = <2 RK_PB5 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
 };
 
-&vp0 {
-	rockchip,plane-mask = <(1 << ROCKCHIP_VOP2_CLUSTER0 | 1 << ROCKCHIP_VOP2_ESMART0)>;
-	rockchip,primary-plane = <ROCKCHIP_VOP2_ESMART0>;
+ /*
+  * There are 10 independent IO domains in RK3566/RK3568, including PMUIO[0:2] and VCCIO[1:7].
+  * 1/ PMUIO0 and PMUIO1 are fixed-level power domains which cannot be configured;
+  * 2/ PMUIO2 and VCCIO1,VCCIO[3:7] domains require that their hardware power supply voltages
+  *    must be consistent with the software configuration correspondingly
+  *	a/ When the hardware IO level is connected to 1.8V, the software voltage configuration
+  *	   should also be configured to 1.8V accordingly;
+  *	b/ When the hardware IO level is connected to 3.3V, the software voltage configuration
+  *	   should also be configured to 3.3V accordingly;
+  * 3/ VCCIO2 voltage control selection (0xFDC20140)
+  *	BIT[0]: 0x0: from GPIO_0A7 (default)
+  *	BIT[0]: 0x1: from GRF
+  *    Default is determined by Pin FLASH_VOL_SEL/GPIO0_A7:
+  *	L:VCCIO2 must supply 3.3V
+  *	H:VCCIO2 must supply 1.8V
+  */
+
+//电源管理非常重要，搞不好会烧硬件的，不要乱配置哟，需要根据原理图来配。
+&pmu_io_domains {
+	status = "okay";
+	pmuio2-supply = <&vcc3v3_pmu>;
+	vccio1-supply = <&vccio_acodec>;
+	vccio3-supply = <&vccio_sd>;
+	vccio4-supply = <&vcc_1v8>;//wucaicheng wifi VCCIO_WL 0¦¸=1V8
+	vccio5-supply = <&vcc_3v3>;
+	vccio6-supply = <&vcc_1v8>;//wucaicheng PHY  0¦¸=1V8
+	vccio7-supply = <&vcc_3v3>;
+};
+
+//图像处理加速器
+&rk_rga {
+	status = "okay";
+};
+
+//音视频解码器
+&rkvdec {
+	status = "okay";
+};
+
+//音视频解码器内存管理
+&rkvdec_mmu {
+	status = "okay";
+};
+
+//音视频编码器
+&rkvenc {
+	venc-supply = <&vdd_logic>;
+	status = "okay";
+};
+
+//音视频编码器内存管理
+&rkvenc_mmu {
+	status = "okay";
+};
+
+//神经网络处理
+&rknpu {
+	rknpu-supply = <&vdd_npu>;
+	status = "okay";
+};
+
+//神经网络内存管理
+&rknpu_mmu {
+	status = "okay";
+};
+
+//ADC
+&saradc {
+	status = "okay";
+	vref-supply = <&vcca_1v8>;
+};
+
+//用于EMMC通信
+&sdhci {
+	bus-width = <8>;
+	supports-emmc;
+	non-removable;
+	max-frequency = <200000000>;
+	status = "okay";
+};
+
+//NAND闪存控制器
+&nandc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "disabled";
+
+	nand@0 {
+		reg = <0>;
+		nand-bus-width = <8>;
+		nand-ecc-mode = "hw";
+		nand-ecc-strength = <16>;
+		nand-ecc-step-size = <1024>;
+	};
+};
+
+//SPi FLSH
+&sfc {
+	status = "disabled";
+};
+
+//TF卡
+&sdmmc0 {
+	max-frequency = <150000000>;
+	supports-sd;
+	bus-width = <4>;
+	cap-mmc-highspeed;
+	cap-sd-highspeed;
+	disable-wp;
+	sd-uhs-sdr104;
+	vmmc-supply = <&vcc3v3_sd>;
+	vqmmc-supply = <&vccio_sd>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc0_bus4 &sdmmc0_clk &sdmmc0_cmd &sdmmc0_det>;
+	status = "okay";
+};
+
+&sdmmc1 {
+	max-frequency = <150000000>;
+	supports-sdio;
+	bus-width = <4>;
+	disable-wp;
+	cap-sd-highspeed;
+	cap-sdio-irq;
+	keep-power-in-suspend;
+	mmc-pwrseq = <&sdio_pwrseq>;
+	non-removable;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_cmd &sdmmc1_clk>;
+	sd-uhs-sdr104;
+	status = "okay";
+};
+
+&sdmmc2 {
+	status = "disabled";
+};
+
+//音频输出接口
+&spdif_8ch {
+	status = "disabled";
+};
+
+//温度监测
+&tsadc {
+	status = "okay";
+};
+
+//USB架构大概的样子是
+//CPU<---->usb controler<---->usb phy<--数据线-->usb device
+//原理图中一个phy可能会对应多个usb，下面的命名u2表示usb2.0，phy0
+&u2phy0_host {
+	phy-supply = <&vcc5v0_host>;
+	status = "okay";
+};
+
+&u2phy0_otg {
+	status = "okay";
+};
+
+&u2phy1_host {
+	phy-supply = <&vcc5v0_host>;
+	status = "okay";
+};
+
+&u2phy1_otg {
+	phy-supply = <&vcc5v0_host>;
+	status = "okay";
+};
+
+&usb2phy0 {
+	status = "okay";
+};
+
+&usb2phy1 {
+	status = "okay";
+};
+
+//ehci支持usb2.0
+&usb_host0_ehci {
+	status = "okay";
+};
+
+//ohci支持usb1.0和usb1.1
+&usb_host0_ohci {
+	status = "okay";
+};
+
+&usb_host1_ehci {
+	status = "okay";
+};
+
+&usb_host1_ohci {
+	status = "okay";
+};
+
+//typec or typeA
+&usbdrd_dwc3 {
+	dr_mode = "otg";
+	extcon = <&usb2phy0>;
+	status = "okay";
+};
+
+//hostusb3.0
+&usbdrd30 {
+	status = "okay";
+};
+
+&usbhost_dwc3 {
+	status = "okay";
+};
+
+&usbhost30 {
+	status = "okay";
+};
+
+//音活动检测模块
+&vad {
+	rockchip,audio-src = <&i2s1_8ch>;
+	rockchip,buffer-time-ms = <128>;
+	rockchip,det-channel = <0>;
+	rockchip,mode = <0>;
+};
+
+//视频解码硬件加速H.26X等
+&vdpu {
+	status = "okay";
+};
+
+//视频解码器内存管理单元
+&vdpu_mmu {
+	status = "okay";
+};
+
+//视频编码硬件加速H.26X等
+&vepu {
+	status = "okay";
+};
+
+//视频编码器内存管理单元
+&vepu_mmu {
+	status = "okay";
+};
+
+//VOP是视频输出处理器
+&vop {
+	status = "okay";
+	assigned-clocks = <&cru DCLK_VOP0>, <&cru DCLK_VOP1>;
+	assigned-clock-parents = <&pmucru PLL_HPLL>, <&cru PLL_VPLL>;
+};
+
+//v视频输出处理器的内存管理单元
+&vop_mmu {
+	status = "okay";
+};
+
+//串口一，目前用在蓝牙上了
+&uart1 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart1m0_xfer &uart1m0_ctsn>;
 };

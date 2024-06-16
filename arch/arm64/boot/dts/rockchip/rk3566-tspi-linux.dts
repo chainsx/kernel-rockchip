@@ -1,0 +1,340 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2020 Rockchip Electronics Co., Ltd.
+ *
+ */
+
+/dts-v1/;
+
+#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/display/media-bus-format.h>
+#include <dt-bindings/pinctrl/rockchip.h>
+#include "rk3566.dtsi"
+#include <dt-bindings/display/rockchip_vop.h>
+#include "rk3566-tspi-core.dtsi"
+
+//【开/关】EDP 显示屏幕配置，用户可以基于此复制自己的屏幕，注意EDP与MIPI屏幕互斥，因为共用了VOP如果需要同显自行修改
+// #include "tspi-rk3566-edp-v10.dtsi"
+
+//【开/关】mipi 显示屏幕配置，用户可以基于此复制自己的屏幕，注意EDP与MIPI屏幕互斥，因为共用了VOP如果需要同显自行修改
+// #include "tspi-rk3566-dsi-v10.dtsi"
+
+
+//【开/关】摄像头 目前视频的是ov5659
+// #include "rk3566-tspi-csi.dtsi"
+
+/ {
+	model = "lckfb tspi V10 Board";
+	compatible = "lckfb,tspi-v10", "rockchip,rk3566";
+
+	rk_headset: rk-headset {
+		compatible = "rockchip_headset";
+		headset_gpio = <&gpio0 RK_PC5 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&hp_det>;
+	};
+
+	leds: leds {
+		compatible = "gpio-leds";
+		rgb_led_r: rgb-led-r {
+			gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "timer";
+			linux,delay-reg = <0>;   		// 延时注册
+			linux,blink-delay-on = <500>; 	// 打开时间
+			linux,blink-delay-off = <500>;	// 关闭时间
+		};
+		rgb_led_g: rgb-led-g {
+			gpios = <&gpio1 RK_PB1 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "timer";
+			linux,delay-reg = <100>;   		// 延时注册
+			linux,blink-delay-on = <1000>; 
+			linux,blink-delay-off = <1000>;
+		};
+		rgb_led_b: rgb-led-b {
+			gpios = <&gpio1 RK_PB0 GPIO_ACTIVE_LOW>;
+			linux,default-trigger = "timer";
+			linux,delay-reg = <100>;  		// 延时注册
+			linux,blink-delay-on = <1500>; 
+			linux,blink-delay-off = <1500>;
+		};
+	};
+
+	ex39-usb-vcc5v0-host-en {
+		compatible = "regulator-fixed";
+		enable-active-high;
+		gpio = <&gpio0 RK_PA5 GPIO_ACTIVE_HIGH>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&ex39_usb_vcc5v0_host_en>;
+		regulator-name = "ex39_usb_vcc5v0_host_en";
+		regulator-always-on;
+	};
+
+	hdmi_sound: hdmi-sound {
+		compatible = "simple-audio-card";
+		simple-audio-card,format = "i2s";
+		simple-audio-card,mclk-fs = <128>;
+		simple-audio-card,name = "rockchip,hdmi";
+		status = "disabled";
+
+		simple-audio-card,cpu {
+				sound-dai = <&i2s0_8ch>;
+		};
+		simple-audio-card,codec {
+				sound-dai = <&hdmi>;
+		};
+	};
+
+};
+
+&pinctrl {
+	headphone {
+		hp_det: hp-det {
+			rockchip,pins = <0 RK_PC5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	xpt2046-touchscreen {
+		xpt2046_int_pin: xpt2046-int-pin {
+			rockchip,pins = <3 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	spi3 {
+		spi3_cs0n: spi3-cs0n {
+			rockchip,pins = <4 RK_PC6 RK_FUNC_GPIO &pcfg_pull_up_drv_level_2>;
+		};
+
+		spi3_cs1n: spi3-cs1n {
+			rockchip,pins = <3 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up_drv_level_2>;
+		};
+	};
+
+	ex39_usb {
+		ex39_usb_vcc5v0_host_en: ex39-usb-vcc5v0-host-en {
+			rockchip,pins = <0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+};
+
+&leds {
+	status = "okay";
+};
+
+&uart3 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&uart3m1_xfer>;
+};
+
+&i2c2 {
+	status = "okay";
+
+	/*添加你的I2C设备参考
+	gt1x: gt1x@14 {
+		compatible = "goodix,gt1x";
+		reg = <0x14>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&touch_gpio>;
+		goodix,rst-gpio = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
+		goodix,irq-gpio = <&gpio0 RK_PB5 IRQ_TYPE_LEVEL_LOW>;
+	};*/
+};
+
+&i2c3 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&i2c3m1_xfer>;
+	/*添加你的I2C设备参考
+	gt1x: gt1x@14 {
+		compatible = "goodix,gt1x";
+		reg = <0x14>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&touch_gpio>;
+		goodix,rst-gpio = <&gpio0 RK_PB6 GPIO_ACTIVE_HIGH>;
+		goodix,irq-gpio = <&gpio0 RK_PB5 IRQ_TYPE_LEVEL_LOW>;
+	};*/
+};
+
+
+&spi3 {
+	status = "okay";
+	max-freq = <48000000>;
+	dma-names = "tx","rx";
+	pinctrl-names = "default", "high_speed";
+	pinctrl-0 = <&spi3_cs0n &spi3_cs1n &spi3m1_pins>;
+	pinctrl-1 = <&spi3_cs0n &spi3_cs1n &spi3m1_pins_hs>;
+	cs-gpios = <&gpio4 RK_PC6 GPIO_ACTIVE_LOW>, <&gpio3 RK_PA7 GPIO_ACTIVE_LOW>;
+    
+	spi0_dev@0 {
+        compatible = "rockchip,spidev";
+        reg = <0>;
+        spi-max-frequency = <12000000>;
+        spi-lsb-first;
+		status = "okay";
+    };
+
+	xpt2046@1 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&xpt2046_int_pin>;
+		reg = <1>;
+		compatible = "ti,ads7846";
+		interrupt-parent = <&gpio3>;
+		interrupts = <RK_PA6 0>;
+		spi-max-frequency = <1500000>;
+		pendown-gpio = <&gpio3 RK_PA6 0>;
+		ti,x-min = /bits/ 16 <0>;
+		ti,x-max = /bits/ 16 <0xfff>;
+		ti,y-min = /bits/ 16 <0>;
+		ti,y-max = /bits/ 16 <0xfff>;
+		ti,x-plate-ohms = /bits/ 16 <180>;
+		ti,pressure-max = /bits/ 16 <512>;
+		ti,debounce-max = /bits/ 16 <10>;
+		ti,debounce-tol = /bits/ 16 <30>;
+		ti,debounce-rep = /bits/ 16 <1>;
+		ti,settle-delay-usec = /bits/ 16 <150>;
+		ti,keep-vref-on = <1>;
+		/*
+		 * Do not set to wakeup source,
+		 * cause TL3568-EVM board will make xpt2046
+		 * int pin level change when suspend, this
+		 * will auto resume TL3568-EVM board.
+		 */
+		/delete-property/ linux,wakeup;
+		/delete-property/ wakeup-source;
+	};
+};
+
+&pwm8 {
+	status = "okay";
+};
+
+&pwm9 {
+	status = "okay";
+};
+
+&pwm14 {
+	status = "okay";
+};
+
+//pwd 15遥控器
+&pwm15 {
+	status = "okay";
+	compatible = "rockchip,remotectl-pwm";
+	remote_pwm_id = <3>;
+	handle_cpu_id = <1>;
+	remote_support_psci = <0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm15m0_pins>;
+
+	//用户自定方法：adb设置输出日志并通过dmesg确定usercode=address与key_table=command
+	//echo 1 > sys/module/rockchip_pwm_remotectl/parameters/code_print
+	//键值可在 include/dt-bindings/input/linux-event-codes.h 中查找
+	ir_key1 {
+		rockchip,usercode = <0xff00>;
+		rockchip,key_table =
+			<0xf2	KEY_MENU>,
+			<0xe9	KEY_BACK>,
+			<0xe3	KEY_ENTER>,
+			<0xe7	KEY_UP>,
+			<0xad	KEY_DOWN>,
+			<0xf7	KEY_LEFT>,
+			<0xa5	KEY_RIGHT>,
+			<0xba	KEY_1>,
+			<0xb9	KEY_2>,
+			<0xb8	KEY_3>,
+			<0xbb	KEY_4>,
+			<0xbf	KEY_5>,
+			<0xbc	KEY_6>,
+			<0xf8	KEY_7>,
+			<0xea	KEY_8>,
+			<0xf6	KEY_9>,
+			<0xe6	KEY_0>;
+	};
+};
+
+&usbhost_dwc3 {
+	phys = <&u2phy0_host>; 
+	phy-names = "usb2-phy";
+	maximum-speed = "high-speed"; 
+	status = "okay";
+};
+&combphy1_usq {
+	rockchip,dis-u3otg1-port; 
+	status = "okay";
+};
+
+&sata1 {
+	rockchip,enable-ssc;
+	status = "okay";
+};
+
+//耳机插入检测，不使用扩展板情况需关闭，否则默认会检测到耳机插入
+&rk_headset {
+	status = "disabled";
+};
+
+&hdmi {
+	status = "okay";
+	rockchip,phy-table =
+		<92812500  0x8009 0x0000 0x0270>,
+		<165000000 0x800b 0x0000 0x026d>,
+		<185625000 0x800b 0x0000 0x01ed>,
+		<297000000 0x800b 0x0000 0x01ad>,
+		<594000000 0x8029 0x0000 0x0088>,
+		<000000000 0x0000 0x0000 0x0000>;
+};
+
+&hdmi_in_vp0 {
+	status = "okay";
+};
+
+&hdmi_in_vp1 {
+	status = "disabled";
+};
+
+&hdmi_sound {
+	status = "okay";
+};
+
+&i2s0_8ch {
+	status = "okay";
+};
+
+&route_hdmi {
+	status = "okay";
+	connect = <&vp0_out_hdmi>;
+};
+
+&gmac1 {
+	phy-mode = "rgmii";
+	clock_in_out = "output";
+
+	snps,reset-gpio = <&gpio0 RK_PC7 GPIO_ACTIVE_LOW>;
+	snps,reset-active-low;
+	/* Reset time is 20ms, 100ms for rtl8211f */
+	snps,reset-delays-us = <0 20000 100000>;
+
+	assigned-clocks = <&cru SCLK_GMAC1_RX_TX>, <&cru SCLK_GMAC1>;
+	assigned-clock-parents = <&cru SCLK_GMAC1_RGMII_SPEED>, <&cru CLK_MAC1_2TOP>;
+	assigned-clock-rates = <0>, <125000000>;
+
+	pinctrl-names = "default";
+	pinctrl-0 = <&gmac1m1_miim
+		     &gmac1m1_tx_bus2
+		     &gmac1m1_rx_bus2
+		     &gmac1m1_rgmii_clk
+		     &gmac1m1_rgmii_bus>;
+
+	tx_delay = <0x4f>;
+	rx_delay = <0x25>;
+
+	phy-handle = <&rgmii_phy0>;
+	status = "okay";
+};
+
+&mdio1 {
+	rgmii_phy0: phy@0 {
+		compatible = "ethernet-phy-ieee802.3-c22";
+		reg = <0x0>;
+	};
+};
