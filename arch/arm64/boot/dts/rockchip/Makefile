@@ -132,6 +132,7 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-orangepi-3b.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-radxa-zero3.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-radxa-zero3-ap6212.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-tspi-linux.dtb
+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-tspi-linux-rk628d.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rk817-eink.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rk817-eink-w6.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3566-rk817-eink-w103.dtb
