@@ -6,20 +6,21 @@
 
 /dts-v1/;
 
+#include "dt-bindings/usb/pd.h"
+#include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/input/rk-input.h>
 #include <dt-bindings/pinctrl/rockchip.h>
 #include <dt-bindings/display/rockchip_vop.h>
-#include <dt-bindings/pwm/pwm.h>
-#include <dt-bindings/input/rk-input.h>
 #include <dt-bindings/display/drm_mipi_dsi.h>
 #include <dt-bindings/sensor-dev.h>
 #include "rk3568.dtsi"
 #include "rk3568-linux.dtsi"
 
 / {
-	model = "Firefly RK3568-ROC-PC HDMI (Linux)";
-	compatible = "rockchip,rk3568-firefly-roc-pc", "rockchip,rk3568";
-	
+	model = "Firefly RK3568-ROC-PC-SE HDMI (Linux)";
+	compatible = "rockchip,rk3568-firefly-roc-pc-se", "rockchip,rk3568";
+
 	audiopwmout_diff: audiopwmout-diff {
 		status = "disabled";
 		compatible = "simple-audio-card";
@@ -90,13 +91,10 @@
 		status = "okay";
 		compatible = "rockchip,multicodecs-card";
 		rockchip,card-name = "rockchip-rk809";
-		//hp-det-gpio = <&gpio3 RK_PA1 GPIO_ACTIVE_LOW>;
 		rockchip,format = "i2s";
 		rockchip,mclk-fs = <256>;
 		rockchip,cpu = <&i2s1_8ch>;
 		rockchip,codec = <&rk809_codec>;
-		// pinctrl-names = "default";
-		// pinctrl-0 = <&hp_det>;
 	};
 
 	spdif-sound {
@@ -229,16 +227,6 @@
 		vin-supply = <&vcc3v3_sys>;
 	};
 
-	vcc3v3_vga: vcc3v3-vga {
-		compatible = "regulator-fixed";
-		regulator-name = "vcc3v3_vga";
-		regulator-always-on;
-		regulator-boot-on;
-		gpio = <&gpio0 RK_PD5 GPIO_ACTIVE_HIGH>;
-		enable-active-high;
-		vin-supply = <&vcc3v3_sys>;
-	};
-
 	pcie30_avdd0v9: pcie30-avdd0v9 {
 		compatible = "regulator-fixed";
 		regulator-name = "pcie30_avdd0v9";
@@ -344,69 +332,79 @@
 		status = "disabled";
 	};
 	
-	vcc_hub_power: vcc-hub-power-regulator {
+	vcc5v0_host: vcc5v0-host-regulator {
 		compatible = "regulator-fixed";
 		enable-active-high;
 		gpio = <&gpio0 RK_PA6 GPIO_ACTIVE_HIGH>;
 		pinctrl-names = "default";
-		pinctrl-0 = <&vcc_hub_power_en>;
-		regulator-name = "vcc_hub_power_en";
+		pinctrl-0 = <&vcc5v0_host_en>;
+		regulator-name = "vcc5v0_host";
 		regulator-always-on;
 	};
 
-	vcc_hub_reset: vcc-hub-reset-regulator {
-		compatible = "regulator-fixed";
-		enable-active-high;
-		gpio = <&gpio1 RK_PA4 GPIO_ACTIVE_HIGH>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&vcc_hub_reset_en>;
-		regulator-name = "vcc_hub_reset_en";
-		regulator-always-on;
-	};
+    vcc_hub_reset: vcc-hub-reset-regulator {
+        compatible = "regulator-fixed";
+        enable-active-high;
+        gpio = <&gpio1 RK_PA4 GPIO_ACTIVE_HIGH>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&vcc_hub_reset_en>;
+        regulator-name = "vcc_hub_reset_en";
+        regulator-always-on;
+    };
 
-    	pcie_pi6c_oe: pcie-pi6c-oe-regulator {
-		compatible = "regulator-fixed";
-		//enable-active-high;
-		gpio = <&gpio3 RK_PA7 GPIO_ACTIVE_LOW>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&pcie_pi6c_oe_en>;
-		regulator-name = "pcie_pi6c_oe_en";
-		regulator-always-on;
-	};
+    pcie_pi6c_oe: pcie-pi6c-oe-regulator {
+        compatible = "regulator-fixed";
+        //enable-active-high;
+        gpio = <&gpio3 RK_PA7 GPIO_ACTIVE_LOW>;
+        pinctrl-names = "default";
+        pinctrl-0 = <&pcie_pi6c_oe_en>;
+        regulator-name = "pcie_pi6c_oe_en";
+        regulator-always-on;
+    };
 
     vcc_4g_power: vcc-4g-power-regulator {
         compatible = "regulator-fixed";
         enable-active-high;
-        gpio = <&gpio0 RK_PB0 GPIO_ACTIVE_HIGH>;
+        gpio = <&gpio3 RK_PA3 GPIO_ACTIVE_HIGH>;
         pinctrl-names = "default";
         pinctrl-0 = <&vcc_4g_power_en>;
         regulator-name = "vcc_4g_power_en";
         regulator-always-on;
     };
 
-	firefly_leds: leds {
-		status = "okay";
-		compatible = "gpio-leds";
+    firefly_leds: leds {
+        status = "okay";
+        compatible = "gpio-leds";
+        pinctrl-names = "default";
+        pinctrl-0 =<&leds_gpio>;
 
-		power_led: power {
-			label = "firefly:blue:power";
-			linux,default-trigger = "ir-power-click";
-			default-state = "on";
-			gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
-			pinctrl-names = "default";
-			pinctrl-0 = <&led_power>;
-		};
+        power_led: power {
+            label = "firefly:blue:power";
+            linux,default-trigger = "ir-power-click";
+            default-state = "on";
+            gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>;
+        };
 
-		user_led: user {
-			label = "firefly:yellow:user";
-			linux,default-trigger = "ir-user-click";
-			default-state = "off";
-			gpios = <&gpio1 RK_PB1 GPIO_ACTIVE_HIGH>;
-			pinctrl-names = "default";
-			pinctrl-0 = <&led_user>;
-		};
+        user_led: user {
+            label = "firefly:yellow:user";
+            linux,default-trigger = "ir-user-click";
+            default-state = "off";
+            gpios = <&gpio1 RK_PB1 GPIO_ACTIVE_HIGH>;
+        };
 
+        diy1_led: diy1 {
+            label = "firefly:green:diy";
+            linux,default-trigger = "ir-user-click";
+            default-state = "off";
+            gpios = <&gpio1 RK_PB0 GPIO_ACTIVE_HIGH>;
+        };
 
+        diy2_led: diy2 {
+            label = "firefly:yellow:diy";
+            linux,default-trigger = "ir-user-click";
+            default-state = "off";
+            gpios = <&gpio2 RK_PC1 GPIO_ACTIVE_HIGH>;
+        };
     };
 };
 
@@ -722,15 +720,15 @@
 			pinctrl-names = "default","spk_gpio";
 			pinctrl-0 = <&i2s1m0_mclk>;
 			pinctrl-1 = <&spk_ctl_gpio>;
-			hp-volume = <20>;
+    		hp-volume = <3>;
 			spk-volume = <3>;
 			mic-in-differential;
 			board-spk-from-hp;
 
 			capture-volume = <0>;
-			io-channels = <&saradc 4>;
+			io-channels = <&saradc 7>;
 			hp-det-adc-value = <1000>;
-			spk-ctl-gpios = <&gpio3 RK_PC5 GPIO_ACTIVE_HIGH>;
+			hp-adc-drift-scope = <100>;
 			status = "okay";
 		};
 	};
@@ -885,7 +883,6 @@
 };
 
 &u2phy0_otg {
-	vbus-supply = <&vcc5v0_otg>;
 	status = "okay";
 };
 
@@ -1011,7 +1008,7 @@
 			rockchip,pins = <0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
-	
+
 	cam {
 		vcc_cam: vcc-cam {
 			rockchip,pins =
@@ -1056,43 +1053,50 @@
 			rockchip,pins = <3 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 	};
-	
+
 	usb {
-		vcc_hub_power_en: vcc-hub-power-en {
+        vcc5v0_host_en: vcc5v0-host-en {
 			rockchip,pins = <0 RK_PA6 RK_FUNC_GPIO &pcfg_pull_none>;
 		};
 
-		vcc_hub_reset_en: vcc-hub-reset-en {
-			rockchip,pins = <1 RK_PA4 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
-	};
-
-	fusb30x {
-		fusb0_int: fusb0-int {
-			rockchip,pins = <0 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>;
-		};
-	};
+        vcc_hub_reset_en: vcc-hub-reset-en {
+            rockchip,pins = <1 RK_PA4 RK_FUNC_GPIO &pcfg_pull_none>;
+        };
+    };
 
     pcie {
         pcie_pi6c_oe_en: pcie-pi6c-oe-en {
-			rockchip,pins = <3 RK_PA7 RK_FUNC_GPIO &pcfg_pull_none>;
-		};
+            rockchip,pins = <3 RK_PA7 RK_FUNC_GPIO &pcfg_pull_none>;
+        };
     };
 
-	4g {
-	    vcc_4g_power_en: vcc-4g-power-en {
-	        rockchip,pins = <0 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>;
-	    };
-	};
+    leds {
+        leds_gpio: leds-gpio {
+            rockchip,pins =
+            /* led_power */
+            <1 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>,
+            /* led_user */
+            <1 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>,
+            /* led diy1 */
+            <1 RK_PB0 RK_FUNC_GPIO &pcfg_pull_none>,
+            /* led diy2 */
+            <2 RK_PC1 RK_FUNC_GPIO &pcfg_pull_none>;
+        };
+    };
 
-	leds {
-	    led_power: led-power {
-			rockchip,pins = <1 RK_PB2 RK_FUNC_GPIO &pcfg_pull_none>;
-	    };
+    4g {
+        vcc_4g_power_en: vcc-4g-power-en {
+            rockchip,pins = <3 RK_PA3 RK_FUNC_GPIO &pcfg_pull_none>;
+        };
+    };
 
-	    led_user: led-user {
-			rockchip,pins = <1 RK_PB1 RK_FUNC_GPIO &pcfg_pull_none>;
-	    };
+	usb-typec {
+		usbc0_int: usbc0-int { /*配置 FUSB302 驱动的中断 gpio pinctrl */
+			rockchip,pins = <0 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+		vcc5v0_typec0_en: vcc5v0-typec0-en { /*配置 FUSB302 驱动的 VBUSgpio pinctrl */
+			rockchip,pins =<0 RK_PA5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
 	};
 };
 
@@ -1368,14 +1372,6 @@
 	status = "disabled";
 };
 
-&rk809_sound {
-	/delete-property/ simple-audio-card,hp-det-gpio;
-};
-
-&rk809_codec {
-	pinctrl-0 = <&i2s1m0_mclk>;
-};
-
 &rkisp {
 	status = "okay";
 };
@@ -1443,6 +1439,47 @@
 	pinctrl-0 = <&uart8m0_xfer &uart8m0_ctsn>;
 };
 
+&can1 {
+	status = "disabled";
+	compatible = "rockchip,rk3568-can-2.0";
+	assigned-clocks = <&cru CLK_CAN1>;
+	assigned-clock-rates = <200000000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&can1m1_pins>;
+};
+
+&can2 {
+	status = "disabled";
+	compatible = "rockchip,rk3568-can-2.0";
+	assigned-clocks = <&cru CLK_CAN2>;
+	assigned-clock-rates = <200000000>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&can2m0_pins>;
+};
+
+&spi1 {
+	status = "disabled";
+	max-freq = <48000000>;
+	dev-port = <0>;
+	pinctrl-0 = <&spi1m1_pins>;
+	pinctrl-1 = <&spi1m1_pins_hs>;
+
+	spi_wk2xxx: spi_wk2xxx@0{
+		status = "disabled";
+		compatible = "firefly,spi-wk2xxx";
+		reg = <0x00>;
+		spi-max-frequency = <10000000>;
+		power-gpio = <&pca9555 15 GPIO_ACTIVE_HIGH>;
+		reset-gpio = <&pca9555 9 GPIO_ACTIVE_HIGH>;
+		irq-gpio = <&gpio0 RK_PA6 IRQ_TYPE_EDGE_FALLING>;
+		cs-gpio = <&gpio3 RK_PA1 GPIO_ACTIVE_HIGH>;
+		/* rk3399 driver support SPI_CPOL | SPI_CPHA | SPI_CS_HIGH */
+		//spi-cpha;     /* SPI mode: CPHA=1 */
+		//spi-cpol;     /* SPI mode: CPOL=1 */
+		//spi-cs-high;
+	};
+};
+
 &pwm7 {
 	status = "disabled";
 
@@ -1486,34 +1523,71 @@
     };
 };
 
-&csi2_dphy0 {
-	status = "disabled";
-};
-
 &i2c0 {
     status = "okay";
 
-	fusb0: fusb30x@22 {
-		compatible = "fairchild,fusb302";
-		reg = <0x22>;
-		pinctrl-names = "default";
-		pinctrl-0 = <&fusb0_int>;
-		int-n-gpios = <&gpio0 RK_PC1 GPIO_ACTIVE_HIGH>;
-		fusb340-switch-gpios = <&gpio3 RK_PC2 GPIO_ACTIVE_HIGH>;
-		vbus-5v-gpios = <&gpio0 RK_PA5 GPIO_ACTIVE_HIGH>;
-		status = "okay";
+	usbc0: fusb302@22 {
+			compatible = "fcs,fusb302";
+			reg = <0x22>;
+			interrupt-parent = <&gpio0>; /*修改 */
+			//根据 FUSB302 INT 实际连接的 GPIO 进行
+			// interrupts = <&gpio0 RK_PC1 IRQ_TYPE_LEVEL_LOW>;
+			fcs,int_n = <&gpio0 RK_PC1 IRQ_TYPE_LEVEL_LOW>;
+			fusb340-switch-gpios = <&gpio3 RK_PC2 GPIO_ACTIVE_HIGH>;
+			pinctrl-names = "default";
+			pinctrl-0 = <&usbc0_int>;
+			vbus-supply = <&vcc5v0_otg>;
+			// vbus-supply = <&vbus_typec>;
+			status = "okay";
+			ports {
+				#address-cells = <1>;
+				#size-cells = <0>;
+				/*用于关联 USB 控制器,实现 USB 角色切换的功能 */
+				port@0 {
+					reg = <0>;
+					usbc0_role_sw: endpoint@0 {
+					remote-endpoint = <&dwc3_role_switch>;
+					};
+				};
+			};
+			usb_con: connector { /*用于描述 PD 协议相关信息 */
+				compatible = "usb-c-connector";
+				label = "USB-C";
+				data-role = "dual";
+				power-role = "dual";
+				try-power-role = "sink";
+				op-sink-microwatt = <1000000>;
+				sink-pdos =
+					<PDO_FIXED(5000, 2500, PDO_FIXED_USB_COMM)>;
+				source-pdos =
+					<PDO_FIXED(5000, 1500, PDO_FIXED_USB_COMM)>;
+			};
+		};
+};
+
+&usb2phy0 {
+    status = "okay";
+};
+
+&usbdrd30 {
+	status = "okay";
+};
+
+&usbdrd_dwc3 {
+	status = "okay";
+	usb-role-switch; /*用于使能 DWC3 驱动注册 USB Role Switch 回调函数 */
+	port {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		dwc3_role_switch: endpoint@0 {
+			reg = <0>;
+			/*关联 FUSB302 ,实现USB角色切换的功能 */
+			remote-endpoint = <&usbc0_role_sw>; 
+		};
 	};
 };
 
 &i2c1 {
-    status = "okay";
-};
-
-&i2c4 {
-	status = "okay";
-};
-
-&pca9555 {
     status = "okay";
 };
 
@@ -1530,65 +1604,102 @@
 };
 
 &uart3 {
-	status = "okay";
+    status = "okay";
+    pinctrl-0 = <&uart3m1_xfer>;
 };
 
 &uart4 {
-        status = "okay";
+    status = "okay";
+    pinctrl-0 = <&uart4m1_xfer>;
+};
+
+&uart7 {
+    status = "okay";
+    pinctrl-0 = <&uart7m1_xfer>;
+};
+
+&uart8 {
+    status = "okay";
+};
+
+&uart9 {
+    status = "okay";
+    pinctrl-0 = <&uart9m1_xfer>;
+};
+
+&spi1 {
+    status = "disabled";
+}; 
+   
+&spi_wk2xxx {
+    status = "disabled";
+};
+
+&can1{
+       status = "okay";
 };
 
 &pcie30phy {
-       status = "okay";
+    status = "okay";
 };
 
 &pcie3x2 {
-        reset-gpios = <&gpio2 RK_PD6 GPIO_ACTIVE_HIGH>;
-        vpcie3v3-supply = <&pcie30_3v3>;
-
-       status = "okay";
+    reset-gpios = <&gpio2 RK_PD6 GPIO_ACTIVE_HIGH>;
+    vpcie3v3-supply = <&pcie30_3v3>;
+    status = "okay";
 };
 
 &its {
     status = "okay";
 };
 
+&vcc3v3_lcd1_n {
+    status = "disabled";
+};
+
 &gmac0 {
     status = "okay";
+    tx_delay = <0x4a>;
+    rx_delay = <0x2e>;
+    // wolirq-gpio = <&gpio0 RK_PC4 GPIO_ACTIVE_LOW>;
 };
 
 &gmac1 {
     status = "okay";
+    tx_delay = <0x3e>;
+    rx_delay = <0x32>;
+    // wolirq-gpio = <&gpio0 RK_PC5 GPIO_ACTIVE_LOW>;
 };
 
 &rgmii_phy0 {
-	led_status_value = <0x6940>;
-};
-
+    led_status_value = <0x6940>;
+}; 
+   
 &rgmii_phy1 {
-	led_status_value = <0x6940>;
-};
+    led_status_value = <0x6940>;
+}; 
 
-&uart8 {
-	status = "okay";
-};
 
 &sdio_pwrseq {
-	status = "okay";
-	reset-gpios = <&gpio3 RK_PD5 GPIO_ACTIVE_LOW>;
-	post-power-on-delay-ms = <100>;
+    status = "okay";
+    reset-gpios = <&gpio3 RK_PD5 GPIO_ACTIVE_LOW>;
+    post-power-on-delay-ms = <100>;
 };
 
+/* used for wifi */
 &sdmmc2 {
-	status = "okay";
+    status = "okay";
 };
 
 &wireless_wlan {
-	wifi_chip_type = "ap6275s";
-	status = "okay";
+    wifi_chip_type = "ap6256";
+    status = "okay";
 };
 
 &wireless_bluetooth {
-	status = "okay";
+    status = "okay";
+    BT,wake_gpio     = <&gpio3 RK_PA2 GPIO_ACTIVE_HIGH>;
+    BT,wake_host_irq = <&gpio3 RK_PA1 GPIO_ACTIVE_HIGH>;
 };
 
 &spdif_8ch{
@@ -1602,40 +1713,19 @@
 };
 
 &pwm7 {
-	status = "okay";
+    status = "okay";
 };
 
 &sata2 {
-	status = "okay";
+    status = "okay";
 };
 
-&vcc3v3_vga {
-	status = "disabled";
+&dfi {
+    status = "okay";
 };
 
-&vcc5v0_otg {
-	status = "disabled";
-};
-
-&combphy0_us {
-	status = "okay";
-	extcon = <&fusb0>;
-};
-
-&usbdrd_dwc3 {
-	dr_mode = "otg";
-	extcon = <&fusb0>;
-	status = "okay";
-};
-
-&usb2phy0 {
-	status = "okay";
-	extcon = <&fusb0>;
-};
-
-&u2phy0_otg {
-	/delete-property/ vbus-supply;
-	status = "okay";
+&dmc {
+    status = "okay";
 };
 
 &route_hdmi {
