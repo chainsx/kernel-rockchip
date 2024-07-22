@@ -122,5 +122,6 @@ dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-rock-3a.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-rock-3b.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-rock-3-a.dtb
 dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-rock-3-b.dtb
+dtb-$(CONFIG_ARCH_ROCKCHIP) += rk3568-roc-pc.dtb
 
 subdir-y	:= $(dts-dirs) overlay
