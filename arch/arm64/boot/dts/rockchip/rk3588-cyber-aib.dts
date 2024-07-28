@@ -267,7 +267,7 @@
 		compatible = "pwm-fan";
 		#cooling-cells = <2>;
 		cooling-levels = <72 94 117 139 162 184 207 229 255>;
-		pwms = <&pwm1 0 10000 0>;
+		pwms = <&pwm1 0 10000 1>;
 	};
 
 	rtl8367s {
