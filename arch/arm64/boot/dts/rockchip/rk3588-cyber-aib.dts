@@ -1261,7 +1261,7 @@
 
 	pcie_wifi_h {
 		pcie_wifi_enable_h: pcie_wifi_enable_h {
-			rockchip,pins = <4 RK_PB5 RK_FUNC_GPIO &pcfg_pull_high>;
+			rockchip,pins = <4 RK_PB5 RK_FUNC_GPIO &pcfg_output_high>;
 		};
 	};
 
