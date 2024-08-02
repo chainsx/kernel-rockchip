@@ -1114,6 +1114,9 @@
 	};
 };
 
+&gmac0 {
+	status = "disabled";
+};
 
 &gmac1 {
 	clock_in_out = "output";
