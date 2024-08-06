@@ -81,6 +81,17 @@
 		vin-supply = <&vcc12v_dcin>;
 	};
 
+	pcie_wifi_enable: pcie-wifi-enable-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "pcie_wifi_enable";
+		enable-active-high;
+		gpio = <&gpio4 RK_PB5 GPIO_ACTIVE_HIGH>;
+		pinctrl-0 = <&pcie_wifi_enable_h>;
+		pinctrl-names = "default";
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
 	vcc_1v1_nldo_s3: vcc-1v1-nldo-s3 {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc_1v1_nldo_s3";
@@ -1125,6 +1136,9 @@
 	};
 };
 
+&gmac0 {
+	status = "disabled";
+};
 
 &gmac1 {
 	clock_in_out = "output";
@@ -1253,6 +1267,12 @@
 	hdmirx {
 		hdmirx_det: hdmirx-det {
 			rockchip,pins = <1 RK_PD5 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	pcie_wifi_h {
+		pcie_wifi_enable_h: pcie_wifi_enable_h {
+			rockchip,pins = <4 RK_PB5 RK_FUNC_GPIO &pcfg_output_high>;
 		};
 	};
 
