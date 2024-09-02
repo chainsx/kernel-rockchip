@@ -1129,6 +1129,7 @@
 	status = "disabled";
 };
 
+/*
 &gmac1 {
 	clock_in_out = "output";
 	phy-mode = "rgmii-rxid";
@@ -1150,7 +1151,7 @@
 		speed = <1000>;
 		full-duplex;
 	};
-};
+};*/
 
 /*&mdio1 {
 	switch@29 {
