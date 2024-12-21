@@ -1,0 +1,502 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2020 Rockchip Electronics Co., Ltd.
+ *
+ */
+
+#include "rk3568-evb1-ddr4-v10.dtsi"
+#include "rk3568-linux.dtsi"
+#include <dt-bindings/display/rockchip_vop.h>
+
+/ {
+	fiq-debugger {
+                compatible = "rockchip,fiq-debugger";
+                rockchip,serial-id = <2>;
+                rockchip,wake-irq = <0>;
+                /* If enable uart uses irq instead of fiq */
+                rockchip,irq-mode-enable = <1>;
+                rockchip,baudrate = <115200>;  /* Only 115200 and 1500000 */
+                interrupts = <GIC_SPI 252 IRQ_TYPE_LEVEL_LOW>;
+                pinctrl-names = "default";
+                pinctrl-0 = <&uart2m0_xfer>;
+                status = "okay";
+        };
+
+	pcie20_3v3: gpio-regulator {
+                compatible = "regulator-gpio";
+                regulator-name = "pcie20_3v3";
+                regulator-min-microvolt = <100000>;
+                regulator-max-microvolt = <3300000>;
+                gpios = <&gpio3 RK_PC2 GPIO_ACTIVE_HIGH>;
+                gpios-states = <0x1>;
+                states = <100000 0x0 3300000 0x1>;
+        };
+
+	leds: leds {
+                compatible = "gpio-leds";
+                work_led: work {
+                        gpios = <&gpio0 RK_PD6 GPIO_ACTIVE_LOW>;
+                        linux,default-trigger = "heartbeat";
+			status = "okay";
+                };
+        };
+};
+
+&pinctrl {
+	fusb30x {
+		fusb0_int: fusb0-int {
+			rockchip,pins = <0 RK_PC2 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+};
+
+/*mipi*/
+&dsi0 {
+	status = "okay";
+	rockchip,lane-rate = <480>;
+	//rockchip,lane-rate = <660>;
+	//rockchip,lane-rate = <1000>;
+
+	dsi0_panel: panel@0 {
+		compatible = "simple-panel-dsi";
+		reg = <0>;
+		backlight = <&backlight>;
+		//power-supply = <&vcc18_lcd_n>;
+
+		prepare-delay-ms = <10>;
+		reset-delay-ms = <40>;
+		init-delay-ms = <40>;
+		enable-delay-ms = <40>;
+		disable-delay-ms = <50>;
+		unprepare-delay-ms = <40>;
+
+        	reset-gpios = <&gpio4 RK_PD2 GPIO_ACTIVE_LOW>;
+        	pinctrl-names = "default";
+        	//pinctrl-0 = <&lcd_rst_gpio>;
+
+		width-mm = <57>;
+		height-mm = <97>;
+
+		dsi,flags = <(MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_BURST |
+			      MIPI_DSI_MODE_VIDEO_SYNC_PULSE)>;
+
+		dsi,format = <MIPI_DSI_FMT_RGB888>;
+		dsi,lanes = <2>;
+
+		panel-init-sequence = [
+				39 00 06 FF FF 98 06 04 01
+				15 00 02 08 10
+				15 00 02 21 01
+				15 00 02 30 02
+				15 00 02 31 02
+				15 00 02 60 07
+				15 00 02 61 06
+				15 00 02 62 06
+				15 00 02 63 04
+				15 00 02 40 14
+				15 00 02 41 22
+				15 00 02 42 02
+				15 00 02 43 09
+				15 00 02 44 86
+				15 00 02 50 78
+				15 00 02 51 78
+				15 00 02 52 00
+				15 00 02 53 3A
+				15 00 02 A0 00
+				15 00 02 A1 19
+				15 00 02 A2 20
+				15 00 02 A3 0E
+				15 00 02 A4 06
+				15 00 02 A5 09
+				15 00 02 A6 06
+				15 00 02 A7 05
+				15 00 02 A8 07
+				15 00 02 A9 0B
+				15 00 02 AA 12
+				15 00 02 AB 07
+				15 00 02 AC 0E
+				15 00 02 AD 15
+				15 00 02 AE 0C
+				15 00 02 AF 00
+				15 00 02 C0 00
+				15 00 02 C1 19
+				15 00 02 C2 20
+				15 00 02 C3 0E
+				15 00 02 C4 06
+				15 00 02 C5 09
+				15 00 02 C6 06
+				15 00 02 C7 04
+				15 00 02 C8 07
+				15 00 02 C9 0B
+				15 00 02 CA 12
+				15 00 02 CB 07
+				15 00 02 CC 0E
+				15 00 02 CD 15
+				15 00 02 CE 0C
+				15 00 02 CF 00
+				39 00 06 FF FF 98 06 04 07
+				15 0a 02 17 32
+				15 0a 02 06 13
+				15 0a 02 02 77
+				15 0a 02 18 1D
+				15 0a 02 E1 79
+				39 00 06 FF FF 98 06 04 06
+				15 00 02 00 20
+				15 00 02 01 04
+				15 00 02 02 00
+				15 00 02 03 00
+				15 00 02 04 01
+				15 00 02 05 01
+				15 00 02 06 88
+				15 00 02 07 04
+				15 00 02 08 01
+				15 00 02 09 90
+				15 00 02 0A 03
+				15 00 02 0B 01
+				15 00 02 0C 01
+				15 00 02 0D 01
+				15 00 02 0E 00
+				15 00 02 0F 00
+				15 00 02 10 55
+				15 00 02 11 53
+				15 00 02 12 01
+				15 00 02 13 0D
+				15 00 02 14 0D
+				15 00 02 15 43
+				15 00 02 16 0B
+				15 00 02 17 00
+				15 00 02 18 00
+				15 00 02 19 00
+				15 00 02 1A 00
+				15 00 02 1B 00
+				15 00 02 1C 00
+				15 00 02 1D 00
+				15 00 02 20 01
+				15 00 02 21 23
+				15 00 02 22 45
+				15 00 02 23 67
+				15 00 02 24 01
+				15 00 02 25 23
+				15 00 02 26 45
+				15 00 02 27 67
+				15 00 02 30 02
+				15 00 02 31 22
+				15 00 02 32 11
+				15 00 02 33 AA
+				15 00 02 34 BB
+				15 00 02 35 66
+				15 00 02 36 00
+				15 00 02 37 22
+				15 00 02 38 22
+				15 00 02 39 22
+				15 00 02 3A 22
+				15 00 02 3B 22
+				15 00 02 3C 22
+				15 00 02 3D 22
+				15 00 02 3E 22
+				15 00 02 3F 22
+				15 00 02 40 22
+				15 00 02 53 10
+				39 00 06 FF FF 98 06 04 07
+				15 00 02 17 22
+				15 00 02 18 1D
+				15 00 02 06 13
+				15 00 02 02 77
+				15 00 02 E1 79
+				39 00 06 FF FF 98 06 04 00
+				15 00 02 3A 77
+				15 00 02 36 00
+				15 ff 02 11 00
+				15 ff 02 29 00
+				];
+
+		panel-exit-sequence = [
+			05 00 01 28
+				05 78 01 10
+		];
+
+		display-timings {
+			native-mode = <&timing0>;
+
+			timing0: timing0 {
+				clock-frequency = <25600000>;
+				hactive = <480>;
+				vactive = <800>;
+				hfront-porch = <10>;
+				hsync-len = <5>;
+				hback-porch = <20>;
+				vfront-porch = <5>;
+				vsync-len = <5>;
+				vback-porch = <20>;
+				hsync-active = <0>;
+				vsync-active = <0>;
+				de-active = <0>;
+				pixelclk-active = <0>;
+			};
+		};
+
+		ports {
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			port@0 {
+				reg = <0>;
+				panel_in_dsi: endpoint {
+					remote-endpoint = <&dsi_out_panel>;
+				};
+			};
+		};
+	};
+
+	ports {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		port@1 {
+			reg = <1>;
+			dsi_out_panel: endpoint {
+				remote-endpoint = <&panel_in_dsi>;
+			};
+		};
+	};
+};
+
+/*touchscreen*/
+&i2c1 {
+	status = "okay";
+
+	ctp@38 {
+		compatible = "focaltech,fts";
+		reg = <0x38>;
+		status = "disabled";
+		interrupt-parent = <&gpio3>;
+		interrupts = <RK_PA2 IRQ_TYPE_LEVEL_LOW>;
+		focaltech,reset-gpio = <&gpio3 RK_PA0 GPIO_ACTIVE_HIGH>;
+		focaltech,irq-gpio = <&gpio3 RK_PA2 IRQ_TYPE_LEVEL_LOW>;
+		focaltech,max-touch-number = <5>;
+		focaltech,display-coords = <0 0 480 800>;
+		power-supply = <&vcc3v3_lcd0_n>;
+		//focaltech,reg_vdd = <&vcc3v3_sys>;
+		//focaltech,reg_avdd = <&vcc3v3_sys>;
+		//vcc-supply = <&vcc3v3_sys>;
+		//vcc_i2c-supply = <&vcc3v3_lcd0_n>;
+	};
+
+	fusb0: fusb30x@22 {
+		compatible = "fairchild,fusb302";
+		reg = <0x22>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&fusb0_int>;
+		int-n-gpios = <&gpio0 RK_PC2 GPIO_ACTIVE_HIGH>;
+		fusb340-switch-gpios = <&gpio3 RK_PC4 GPIO_ACTIVE_HIGH>;
+		vbus-5v-gpios = <&gpio0 RK_PA5 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+
+};
+
+&usbdrd_dwc3 {
+	dr_mode = "otg";
+	extcon = <&fusb0>;
+	status = "okay";
+};
+  
+&combphy0_us {
+	status = "okay";
+	extcon = <&fusb0>;
+};
+
+&usb2phy0 {
+        status = "okay";
+        extcon = <&fusb0>;
+};
+
+&u2phy0_otg {
+        /delete-property/ vbus-supply;
+        status = "okay";
+};
+
+
+/*pcie2.0*/
+
+&pcie2x1 {
+	reset-gpios = <&gpio3 RK_PC1 GPIO_ACTIVE_HIGH>;
+	vpcie3v3-supply = <&pcie20_3v3>;
+	pinctrl-0 = <&pcie20m1_pins>; 
+	status = "disabled";
+};
+
+&pcie30phy {
+        status = "disabled";
+};
+
+&pcie3x2 {
+        reset-gpios = <&gpio2 RK_PD6 GPIO_ACTIVE_HIGH>;
+        vpcie3v3-supply = <&vcc3v3_pcie>;
+	pinctrl-0 = <&pcie30x2m1_pins>; 
+        status = "disabled";
+};
+
+
+&sata2 {
+        status = "disabled";
+};
+
+
+/************* IR ***************/
+
+&pwm15 {
+	status = "okay";
+
+	compatible = "rockchip,remotectl-pwm";
+	remote_pwm_id = <3>;
+	handle_cpu_id = <1>;
+	remote_support_psci = <0>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pwm15m1_pins>;
+
+	ir_key1 {
+		rockchip,usercode = <0x4040>;
+		rockchip,key_table =
+			<0xf2	KEY_REPLY>,
+			<0xba	KEY_BACK>,
+			<0xf4	KEY_UP>,
+			<0xf1	KEY_DOWN>,
+			<0xef	KEY_LEFT>,
+			<0xee	KEY_RIGHT>,
+			<0xbd	KEY_HOME>,
+			<0xea	KEY_VOLUMEUP>,
+			<0xe3	KEY_VOLUMEDOWN>,
+			<0xe2	KEY_SEARCH>,
+			<0xb2	KEY_POWER>,
+			<0xbc	KEY_MUTE>,
+			<0xec	KEY_MENU>,
+			<0xbf	0x190>,
+			<0xe0	0x191>,
+			<0xe1	0x192>,
+			<0xe9	183>,
+			<0xe6	248>,
+			<0xe8	185>,
+			<0xe7	186>,
+			<0xf0	388>,
+			<0xbe	0x175>;
+	};
+
+	ir_key2 {
+		rockchip,usercode = <0xff00>;
+		rockchip,key_table =
+			<0xeb   KEY_POWER>,
+			<0xec   KEY_MENU>,
+			<0xfe   KEY_BACK>,
+			<0xb7   KEY_HOME>,
+			<0xa3   KEY_WWW>,
+			<0xf4   KEY_VOLUMEUP>,
+			<0xa7   KEY_VOLUMEDOWN>,
+			<0xf8   KEY_REPLY>,
+			<0xfc   KEY_UP>,
+			<0xfd   KEY_DOWN>,
+			<0xf1   KEY_LEFT>,
+			<0xe5   KEY_RIGHT>;
+	};
+
+	ir_key3 {
+		rockchip,usercode = <0x1dcc>;
+		rockchip,key_table =
+			<0xee	KEY_REPLY>,
+			<0xf0	KEY_BACK>,
+			<0xf8	KEY_UP>,
+			<0xbb	KEY_DOWN>,
+			<0xef	KEY_LEFT>,
+			<0xed	KEY_RIGHT>,
+			<0xfc	KEY_HOME>,
+			<0xf1	KEY_VOLUMEUP>,
+			<0xfd	KEY_VOLUMEDOWN>,
+			<0xb7	KEY_SEARCH>,
+			<0xff	KEY_POWER>,
+			<0xf3	KEY_MUTE>,
+			<0xbf	KEY_MENU>,
+			<0xf9	0x191>,
+			<0xf5	0x192>,
+			<0xb3	388>,
+			<0xbe	KEY_1>,
+			<0xba	KEY_2>,
+			<0xb2	KEY_3>,
+			<0xbd	KEY_4>,
+			<0xf9	KEY_5>,
+			<0xb1	KEY_6>,
+			<0xfc	KEY_7>,
+			<0xf8	KEY_8>,
+			<0xb0	KEY_9>,
+			<0xb6	KEY_0>,
+			<0xb5	KEY_BACKSPACE>;
+	};
+};
+
+/********************************/
+
+&pwm7 {
+	status = "disabled";
+};
+
+&spdif_8ch {
+	status = "disabled";
+};
+
+&gt1x {
+	status = "disabled";
+};
+
+&mxc6655xa {
+	status = "disabled";
+};
+
+&wireless_wlan {
+        wifi_chip_type = "ap6256";
+        status = "okay";
+};
+
+&wireless_bluetooth {
+        compatible = "bluetooth-platdata";
+        clocks = <&rk809 1>;
+        clock-names = "ext_clock";
+        //wifi-bt-power-toggle;
+        uart_rts_gpios = <&gpio2 RK_PB1 GPIO_ACTIVE_LOW>;
+        pinctrl-names = "default", "rts_gpio";
+        pinctrl-0 = <&uart8m0_rtsn>;
+        pinctrl-1 = <&uart8_gpios>;
+        BT,reset_gpio    = <&gpio4 RK_PC4 GPIO_ACTIVE_HIGH>;
+        BT,wake_gpio     = <&gpio0 RK_PD5 GPIO_ACTIVE_HIGH>;
+        BT,wake_host_irq = <&gpio0 RK_PD4 GPIO_ACTIVE_HIGH>;
+        status = "okay";
+};
+
+&vcc3v3_vga {
+	status = "disabled";
+};
+
+&vp0 {
+	cursor-win-id = <ROCKCHIP_VOP2_CLUSTER0>;
+};
+
+&vp1 {
+	cursor-win-id = <ROCKCHIP_VOP2_CLUSTER1>;
+};
+
+&edp {
+        status = "disabled";
+};
+
+&hdmi_sound {
+	status = "disabled";
+};
+
+/***************************************************/
+&dmc {
+        status = "disabled";
+};
+
+&dfi{
+        status = "disabled";
+};
+
+/***************************************************/
