@@ -7,7 +7,8 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pwm/pwm.h>
 #include <dt-bindings/pinctrl/rockchip.h>
-#include <dt-bindings/input/rk-input.h>
+//#include <dt-bindings/input/rk-input.h>
+#include <dt-bindings/input/linux-event-codes.h>
 #include <dt-bindings/display/drm_mipi_dsi.h>
 #include <dt-bindings/sensor-dev.h>
 
@@ -151,18 +152,12 @@
 	};
 
 	hdmi_sound: hdmi-sound {
-		compatible = "simple-audio-card";
-		simple-audio-card,format = "i2s";
-		simple-audio-card,mclk-fs = <128>;
-		simple-audio-card,name = "rockchip,hdmi";
 		status = "disabled";
-
-		simple-audio-card,cpu {
-				sound-dai = <&i2s0_8ch>;
-		};
-		simple-audio-card,codec {
-				sound-dai = <&hdmi>;
-		};
+		compatible = "rockchip,hdmi";
+		rockchip,mclk-fs = <128>;
+		rockchip,card-name = "rockchip,hdmi";
+		rockchip,cpu = <&i2s0_8ch>;
+		rockchip,codec = <&hdmi>;
 	};
 
 	leds: leds {
@@ -170,6 +165,7 @@
 		work_led: work {
 			gpios = <&gpio0 RK_PC0 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger = "heartbeat";
+			status = "disabled";
 		};
 	};
 
@@ -207,7 +203,7 @@
 	};
 
 	spdif-sound {
-		status = "okay";
+		status = "disabled";
 		compatible = "simple-audio-card";
 		simple-audio-card,name = "ROCKCHIP,SPDIF";
 		simple-audio-card,cpu {
@@ -219,7 +215,7 @@
 	};
 
 	spdif_out: spdif-out {
-			status = "okay";
+			status = "disabled";
 			compatible = "linux,spdif-dit";
 			#sound-dai-cells = <0>;
 	};
@@ -276,6 +272,7 @@
 		pinctrl-0 = <&vcc5v0_host_en>;
 	};
 
+/*
 	vcc5v0_otg: vcc5v0-otg-regulator {
 		compatible = "regulator-fixed";
 		regulator-name = "vcc5v0_otg";
@@ -287,6 +284,7 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&vcc5v0_otg_en>;
 	};
+*/
 
 	vcc3v3_lcd0_n: vcc3v3-lcd0-n {
 		compatible = "regulator-fixed";
@@ -1109,6 +1107,7 @@
 		regulator-min-microvolt = <712500>;
 		regulator-max-microvolt = <1390000>;
 		regulator-init-microvolt = <900000>;
+		regulator-initial-mode = <1>;
 		regulator-ramp-delay = <2300>;
 		fcs,suspend-voltage-selector = <1>;
 		regulator-boot-on;
@@ -1544,9 +1543,9 @@
 	pmuio2-supply = <&vcc3v3_pmu>;
 	vccio1-supply = <&vccio_acodec>;
 	vccio3-supply = <&vccio_sd>;
-	vccio4-supply = <&vcc_3v3>;
+	vccio4-supply = <&vcc_1v8>;
 	vccio5-supply = <&vcc_3v3>;
-	vccio6-supply = <&vcc_3v3>;
+	vccio6-supply = <&vcc_1v8>;
 	vccio7-supply = <&vcc_3v3>;
 };
 
@@ -1567,7 +1566,7 @@
 	remote_support_psci = <0>;
 	pinctrl-names = "default";
 	pinctrl-0 = <&pwm7_pins>;
-
+/*
 	ir_key1 {
 		rockchip,usercode = <0x4040>;
 		rockchip,key_table =
@@ -1661,6 +1660,7 @@
 			<0xb6	KEY_0>,
 			<0xb5	KEY_BACKSPACE>;
 	};
+*/
 };
 
 &rk_rga {
@@ -1731,7 +1731,7 @@
 };
 
 &spdif_8ch {
-	status = "okay";
+	status = "disabled";
 };
 
 &tsadc {
@@ -1744,7 +1744,8 @@
 };
 
 &u2phy0_otg {
-	vbus-supply = <&vcc5v0_otg>;
+	//vbus-supply = <&vcc5v0_otg>;
+	vbus-supply = <&fusb0>;	
 	status = "okay";
 };
 
